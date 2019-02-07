@@ -2,6 +2,8 @@ defmodule PeerDNS.DNSServer do
   @behaviour DNS.Server
   use DNS.Server
 
+  require Logger
+
   def handle(record, _cl) do
     Logger.info(fn -> "#{inspect(record)}" end)
     query = hd(record.qdlist)

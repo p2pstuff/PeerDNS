@@ -1,19 +1,21 @@
 defmodule PeerDNS.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
 
   def start(_type, _args) do
-    # List all child processes to be supervised
-    children = [
-      # Starts a worker by calling: PeerDNS.Worker.start_link(arg)
-      # {PeerDNS.Worker, arg}
-    ]
+    source_desc = Application.fetch_env!(:peerdns, :sources)
+    sources = for {src_args, i} <- Enum.with_index(source_desc, 1) do
+      id = String.to_atom "source#{i}"
+      src_args = [{:id, id} | src_args]
+      Supervisor.child_spec({PeerDNS.Source, src_args}, id: id)
+    end
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
+    children = [
+      PeerDNS.DB,
+      #PeerDNS.DNSServer,
+    ] ++ sources
+
     opts = [strategy: :one_for_one, name: PeerDNS.Supervisor]
     Supervisor.start_link(children, opts)
   end

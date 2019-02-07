@@ -5,10 +5,6 @@ use Mix.Config
 config :logger, level: :info
 
 
-# Standard value, do not change this!
-standard_api_port = 14123
-config :peerdns, standard_api_port: standard_api_port
-
 # Some trusted peer IPs
 # Replace with your own here and when they are used later
 peer_fly11 = "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"
@@ -27,8 +23,8 @@ config :peerdns, listen_dns: [
   # {"0.0.0.0", 53}   # Open DNS server on IPv4 network
   # {"::", 53}        # Open DNS server on IPv6 network
 
-  {"127.0.0.1", 53} # Private DNS server on IPv4 network
-  {"::1", 53}       # Private DNS server on IPv6 network
+  {"127.0.0.1", 53},  # Private DNS server on IPv4 network
+  {"::1", 53},        # Private DNS server on IPv6 network
 ]
 
 # Where to listen for PeerDNS API requests
@@ -36,8 +32,8 @@ config :peerdns, listen_dns: [
 # Recommended: do not change this, let everyone connect.
 # Access control is handled below.
 config :peerdns, listen_api: [
-  {"0.0.0.0", standard_api_port},       # Anyone through IPv4
-  {"::", standard_api_port},            # Anyone through IPv6
+  {"0.0.0.0", 14123},       # Anyone through IPv4
+  {"::", 14123},            # Anyone through IPv6
 ]
 
 # What hosts are allowed to use the privileged PeerDNS API
@@ -51,7 +47,7 @@ config :peerdns, sources: [
     file: "data/name_list.json",
     editable: true,
     weight: 1,
-    ping_to: [{peer_fly11, standard_api_port}],
+    ping_to: [{peer_fly11, 14123}],
     ping_interval: 3600*12,   # 12 hours
   ],
   [
@@ -72,16 +68,11 @@ config :peerdns, ping: [
 config :peerdns, neighbors: [
   # Use these peers as neighbors in all cases
   {:static, [
-    [host: {peer_fly11, standard_api_port}, weight: 0.9, push: true, pull: true]
-  ]},
-  # A list of peers to use as neighbors that can be modified through the API
-  {:file_db, [
-    file: "data/neighbors.json",
-    editable: "true",
+    [host: {peer_fly11, 14123}, weight: 0.9, push: true, pull: true]
   ]},
   # Look up our CJDNS neighbors by connecting to local cjdroute and try to
   # use them as neighbors
-  {:cjdns, [port: standard_api_port, weight: 0.5, push: true, pull: true]}
+  {:cjdns, [port: 14123, weight: 0.5, push: true, pull: true]}
 ]
 
 config :peerdns, open: :accept

@@ -22,6 +22,8 @@ defmodule PeerDNS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:poison, "~> 3.1"},
+      {:enacl, git: "https://github.com/jlouis/enacl.git", tag: "0.16.0"},
       {:dns, "~> 2.1.2"},
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
