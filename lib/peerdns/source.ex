@@ -3,7 +3,7 @@ defmodule PeerDNS.Source do
 
   require Logger
 
-  defstruct [:file, :name, :editable, :weight, :names, :data]
+  defstruct [:file, :name, :editable, :weight, :names, :zones]
 
   def start_link(args) do
     id = args[:id]
@@ -15,6 +15,33 @@ defmodule PeerDNS.Source do
     end
   end
 
+  def add_name(source, name, pk, weight) do
+    GenServer.call(source, {:add_name, name, {pk, weight}})
+  end
+
+  def get_name(source, name) do
+    GenServer.call(source, {:get_name, name})
+  end
+
+  def remove_name(source, name) do
+    GenServer.call(source, {:remove_name, name})
+  end
+
+  def add_zone(source, zone, weight \\ 1) do
+    GenServer.call(source, {:add_zone, zone, weight})
+  end
+
+  def get_zone(source, name) do
+    GenServer.call(source, {:get_zone, name})
+  end
+
+  def remove_zone(source, name) do
+    GenServer.call(source, {:remove_zone, name})
+  end
+
+
+  # Implementation
+
   def init(args) do
     state = %__MODULE__{
       file: args[:file],
@@ -22,7 +49,7 @@ defmodule PeerDNS.Source do
       editable: args[:editable] || false,
       weight: args[:weight] || 1,
       names: %{},     # name => {pk, weight}
-      data: %{},      # name => PeerDNS.ZoneData
+      zones: %{},      # name => PeerDNS.ZoneData
     }
 
     state = case File.read(args[:file]) do
@@ -37,27 +64,73 @@ defmodule PeerDNS.Source do
               {:ok, zone} = PeerDNS.ZoneData.deserialize(pk, json, signature)
               {zone.name, %{zone | sk: zd["sk"]}}
             end
-            %{state | names: names, data: zone_data}
+            %{state | names: names, zones: zone_data}
           _ -> state
         end
       _ -> state
     end
 
     publish_names(state)
-    publish_data(state)
+    publish_zones(state)
     {:ok, state}
   end
 
-
-  defp publish_names(state) do
-    list = for {name, {pk, weight}} <- state.names do
-      {name, pk, weight * state.weight}
-    end
-    PeerDNS.DB.names_update({:source, state.name}, list)
+  def handle_call({:add_name, name, val}, _from, state) do
+    state = %{state | names: Map.put(state.names, name, val)}
+    updated(state)
   end
 
-  defp publish_data(state) do
-    list = for {_, data} <- state.data, do: %{data | sk: nil}
+  def handle_call({:get_name, name}, _from, state) do
+    case state.names[name] do
+      nil -> {:reply, {:error, :not_found}, state}
+      x -> {:reply, {:ok, x}, state}
+    end
+  end
+
+  def handle_call({:remove_name, name}, _from, state) do
+    state = %{state | names: Map.delete(state.names, name)}
+    updated(state)
+  end
+
+  def handle_call({:add_zone, zone, weight}, _from, state) do
+    state = %{state |
+      names: Map.put(state.names, zone.name, {zone.pk, weight}),
+      zones: Map.put(state.zones, zone.name, zone)
+    }
+    updated(state, true)
+  end
+
+  def handle_call({:get_zone, name}, _from, state) do
+    case state.zones[name] do
+      nil -> {:reply, {:error, :not_found}, state}
+      x -> {:reply, {:ok, x}, state}
+    end
+  end
+
+  def handle_call({:remove_zone, name}, _from, state) do
+    state = %{state |
+      names: Map.delete(state.names, name),
+      zones: Map.delete(state.zones, name)
+    }
+    updated(state, true)
+  end
+
+  defp updated(state, zones \\ false) do
+    save(state)
+    publish_names(state)
+    if zones do publish_zones(state) end
+    {:reply, :ok, state}
+  end
+
+  defp publish_names(state) do
+    weighted = for {name, {pk, weight}} <- state.names, into: %{} do
+      {name, {pk, weight * state.weight}}
+    end
+    PeerDNS.DB.names_update({:source, state.name}, weighted)
+  end
+
+  defp publish_zones(state) do
+    list = for {_, data} <- state.zones, do: %{data | sk: nil}
     PeerDNS.DB.zone_data_update(list)
   end
 
@@ -65,7 +138,7 @@ defmodule PeerDNS.Source do
     name_list = for {name, {pk, weight}} <- state.names do
       [name, pk, weight]
     end
-    zone_list = for {_, zd} <- state.data do
+    zone_list = for {_, zd} <- state.zones do
       %{
         "pk" => zd.pk,
         "sk" => zd.sk,

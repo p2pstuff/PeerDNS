@@ -13,7 +13,7 @@ defmodule PeerDNS.Application do
 
     children = [
       PeerDNS.DB,
-      #PeerDNS.DNSServer,
+      PeerDNS.DNSServer,
     ] ++ sources
 
     opts = [strategy: :one_for_one, name: PeerDNS.Supervisor]
