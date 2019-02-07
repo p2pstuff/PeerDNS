@@ -76,8 +76,12 @@ defmodule PeerDNS.Source do
   end
 
   def handle_call({:add_name, name, val}, _from, state) do
-    state = %{state | names: Map.put(state.names, name, val)}
-    updated(state)
+    if state.editable do
+      state = %{state | names: Map.put(state.names, name, val)}
+      updated(state)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
   end
 
   def handle_call({:get_name, name}, _from, state) do
@@ -88,16 +92,24 @@ defmodule PeerDNS.Source do
   end
 
   def handle_call({:remove_name, name}, _from, state) do
-    state = %{state | names: Map.delete(state.names, name)}
-    updated(state)
+    if state.editable do
+      state = %{state | names: Map.delete(state.names, name)}
+      updated(state)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
   end
 
   def handle_call({:add_zone, zone, weight}, _from, state) do
-    state = %{state |
-      names: Map.put(state.names, zone.name, {zone.pk, weight}),
-      zones: Map.put(state.zones, zone.name, zone)
-    }
-    updated(state, true)
+    if state.editable do
+      state = %{state |
+        names: Map.put(state.names, zone.name, {zone.pk, weight}),
+        zones: Map.put(state.zones, zone.name, zone)
+      }
+      updated(state, true)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
   end
 
   def handle_call({:get_zone, name}, _from, state) do
@@ -108,11 +120,15 @@ defmodule PeerDNS.Source do
   end
 
   def handle_call({:remove_zone, name}, _from, state) do
-    state = %{state |
-      names: Map.delete(state.names, name),
-      zones: Map.delete(state.zones, name)
-    }
-    updated(state, true)
+    if state.editable do
+      state = %{state |
+        names: Map.delete(state.names, name),
+        zones: Map.delete(state.zones, name)
+      }
+      updated(state, true)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
   end
 
   defp updated(state, zones \\ false) do

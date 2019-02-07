@@ -47,10 +47,15 @@ defmodule PeerDNS.ZoneData do
           json: json,
           signature: signature
         }
-        if PeerDNS.is_zone_name_valid?(zd.name) do
-          {:ok, zd}
-        else
-          {:error, :invalid_zone_name}
+        cond do
+          not PeerDNS.is_zone_name_valid?(zd.name) ->
+            {:error, :invalid_zone_name}
+          not is_integer(version) ->
+            {:error, :invalid_version}
+          not (is_list(entries) and Enum.all?(entries, &PeerDNS.is_entry_valid?/1)) ->
+            {:error, :invalid_entry}
+          true ->
+            {:ok, zd}
         end
       err -> err
     end
@@ -61,7 +66,7 @@ defmodule PeerDNS.ZoneData do
       {:ok, %{"pk" => pk, "json" => json, "signature" => signature}} ->
         deserialize(pk, json, signature)
       _ ->
-        {:error, :bad_json}
+        {:error, :invalid_json}
     end
   end
 
@@ -137,12 +142,12 @@ defmodule PeerDNS.ZoneData do
               {:ok, %{"name" => name, "version" => version, "entries" => entries}} ->
                 {:ok, name, version, entries}
               _ ->
-                {:error, :bad_json}
+                {:error, :invalid_json}
             end
           _ ->
-            {:error, :bad_signature}
+            {:error, :invalid_signature}
         end
-      _ -> {:error, :bad_base64}
+      _ -> {:error, :invalid_base64}
     end
   end
 end
