@@ -144,18 +144,20 @@ defmodule PeerDNS.Sync do
     host = api_host(ip, args)
     Logger.info("Starting pull from #{host}...")
     cutoff = Application.fetch_env!(:peerdns, :cutoff) / args[:weight]
-    data = HTTPotion.get("#{host}/api/names/pull", query: %{cutoff: cutoff})
+    request = HTTPotion.get("#{host}/api/names/pull", query: %{cutoff: to_string cutoff})
+    200 = request.status_code
+    data = Poison.decode!(request.body)
 
     source_id = ip_source_id(ip)
     previous_names = :ets.match_object(:peerdns_names, {:_, :_, :_, :_, source_id})
                      |> Enum.map(&(elem(&1, 1)))
                      |> Enum.filter(&(data[&1] == nil))
     adds = data
-           |> Enum.map(fn {name, data} ->
-             {weight, _} = Float.parse(data["weight"])
+           |> Enum.map(fn {name, val} ->
+             {weight, _} = Float.parse(val["weight"])
              true = is_number(weight) and weight > 0 and weight <= 1
-             true = PeerDNS.is_pk_valid?(data["pk"])
-             {name, {data["pk"], weight}}
+             true = PeerDNS.is_pk_valid?(val["pk"])
+             {name, {val["pk"], weight}}
            end)
            |> Enum.into(%{})
     delta = %Delta{added: adds, removed: MapSet.new(previous_names)}
