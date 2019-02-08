@@ -122,7 +122,6 @@ defmodule PeerDNS.Sync do
     if nadd + ndel + nzone > 0 do
       Logger.info("Pushing delta: #{nadd} new or modified names, #{ndel} deleted names, #{nzone} new or modified zones")
       data = push_data(state)
-      Logger.info(data)
       for {ip, args} <- PeerDNS.Neighbors.get do
         spawn_link fn -> push_task(data, ip, args) end
       end
@@ -144,48 +143,44 @@ defmodule PeerDNS.Sync do
     host = api_host(ip, args)
     Logger.info("Starting pull from #{host}...")
     cutoff = Application.fetch_env!(:peerdns, :cutoff) / args[:weight]
-    request = HTTPotion.get("#{host}/api/names/pull", query: %{cutoff: to_string cutoff})
-    200 = request.status_code
-    data = Poison.decode!(request.body)
+    data = http_get!("#{host}/api/names/pull", %{cutoff: to_string cutoff})
+    data = Poison.decode!(data)
 
+    source_weight = ip_source_weight(ip)
     source_id = ip_source_id(ip)
     previous_names = :ets.match_object(:peerdns_names, {:_, :_, :_, :_, source_id})
                      |> Enum.map(&(elem(&1, 1)))
                      |> Enum.filter(&(data[&1] == nil))
     adds = data
            |> Enum.map(fn {name, val} ->
-             {weight, _} = Float.parse(val["weight"])
+             %{"weight" => weight, "pk" => pk} = val
              true = is_number(weight) and weight > 0 and weight <= 1
              true = PeerDNS.is_pk_valid?(val["pk"])
-             {name, {val["pk"], weight}}
+             {name, {pk, source_weight * weight}}
            end)
            |> Enum.into(%{})
     delta = %Delta{added: adds, removed: MapSet.new(previous_names)}
     PeerDNS.DB.handle_names_delta(source_id, delta)
 
-    try do
-      old_versions = data
-                     |> Enum.map(fn {name, data} ->
-                        {new_ver, _} = Integer.parse(data["version"])
-                       case :ets.match(:peerdns_names, {name, data["pk"], :_, :"$1", :_}) do
-                         [[old_ver]] when old_ver < new_ver-> {name, data["pk"]}
-                         _ -> nil
-                        end
-                    end)
-                    |> Enum.map(&(&1 != nil))
-                    |> Enum.into(%{})
-      req = Poison.encode!(%{"request" => old_versions})
-      missing_zones = http_post!("#{host}/api/zones/pull", req)
-      zonedata = for zd <- missing_zones do
-        PeerDNS.ZoneData.deserialize(zd["pk"], zd["json"], zd["signature"])
-      end
-      PeerDNS.DB.zone_data_update(zonedata)
-      PeerDNS.Sync.push_delta()
-    rescue
-      err ->
-        PeerDNS.Sync.push_delta()
-        raise err
+    old_versions = data
+                   |> Enum.map(fn {name, data} ->
+                     new_ver = data["version"]
+                     true = is_integer new_ver
+                     case :ets.match(:peerdns_names, {name, data["pk"], :_, :"$1", :_}) do
+                       [[old_ver]] when old_ver < new_ver-> {name, data["pk"]}
+                       _ -> nil
+                     end
+                   end)
+                   |> Enum.filter(&(&1 != nil))
+                   |> Enum.into(%{})
+    req = Poison.encode!(%{"request" => old_versions})
+    missing_zones = http_post!("#{host}/api/zones/pull", req)
+    zonedata = for zd <- Poison.decode!(missing_zones) do
+      {:ok, zd} = PeerDNS.ZoneData.deserialize(zd["pk"], zd["json"], zd["signature"])
+      zd
     end
+    PeerDNS.DB.zone_data_update(zonedata)
+    PeerDNS.Sync.push_delta()
   end
 
   defp push_data(state) do
@@ -219,21 +214,26 @@ defmodule PeerDNS.Sync do
     end
   end
 
-  defp http_post!(endpoint, data) do
-    result = HTTPotion.post(endpoint, [body: data, headers: ["Content-Type": "application/json"]])
+  defp http_get!(endpoint, query \\ nil) do
+    result = HTTPotion.get(endpoint, [query: query, ibrowse: [host_header: "peerdns"]])
     200 = result.status_code
-    "application/json" = result.headers["Content-Type"]
+    "application/json" <> _ = result.headers["Content-Type"]
+    result.body
+  end
+
+  defp http_post!(endpoint, data) do
+    result = HTTPotion.post(endpoint,
+                            [body: data,
+                             headers: ["Content-Type": "application/json"],
+                             ibrowse: [host_header: "peerdns"]])
+    200 = result.status_code
+    "application/json" <> _ = result.headers["Content-Type"]
     result.body
   end
 
   defp ip_source_id(ip) do
     type = case PeerDNS.Neighbors.get(ip) do
       nil -> :open
-        if Application.fetch_env!(:peerdns, :open) == :accept do
-          {Application.fetch_env!(:peerdns, :open_weight), :open}
-        else
-          {0, :open}
-        end
       n -> n.source
     end
     {type, to_string(:inet_parse.ntoa ip)}
