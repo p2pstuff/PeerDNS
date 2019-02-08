@@ -1,6 +1,8 @@
 defmodule PeerDNS.DB do
   use GenServer
 
+  require Logger
+
   @expiration_time 3600*24
 
   # API
@@ -61,10 +63,10 @@ defmodule PeerDNS.DB do
     end
     for {name, {pk, weight}} <- delta.added do
       case :ets.lookup(:peerdns_names, name) do
-        [{^name, ^pk, old_weight, _, _}] ->
+        [{^name, ^pk, old_weight, version, _}] ->
           if weight > old_weight do
             # this new info is the highest weight source
-            :ets.insert(:peerdns_names, {name, pk, weight, 0, source_id})
+            :ets.insert(:peerdns_names, {name, pk, weight, version, source_id})
             PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
           end
         [{^name, old_pk, old_weight, _, old_source}] when old_pk != pk ->
@@ -73,6 +75,9 @@ defmodule PeerDNS.DB do
             :ets.delete(:peerdons_zone_data, {name, old_pk})
             PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
           end
+        [] ->
+          :ets.insert(:peerdns_names, {name, pk, weight, 0, source_id})
+          PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
         _ -> nil
       end
     end

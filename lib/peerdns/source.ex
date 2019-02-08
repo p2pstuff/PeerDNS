@@ -70,8 +70,8 @@ defmodule PeerDNS.Source do
       _ -> state
     end
 
-    publish_names_delta(state, %{}, state.names)
-    publish_zones(state)
+    :ok = publish_names_delta(state, %{}, state.names)
+    :ok = publish_zones(state)
     PeerDNS.Sync.push_delta()
     {:ok, state}
   end
