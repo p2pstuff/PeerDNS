@@ -23,3 +23,6 @@ erl_crash.dump
 peerdns-*.tar
 
 /data/*.json
+
+# Configuration: provide a sample file only
+/config/config.exs
