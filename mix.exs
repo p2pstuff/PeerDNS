@@ -22,6 +22,9 @@ defmodule PeerDNS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:plug, "~> 1.6"},
+      {:cowboy, "~> 2.4"},
+      {:plug_cowboy, "~> 2.0.1"},
       {:poison, "~> 3.1"},
       {:enacl, git: "https://github.com/jlouis/enacl.git", tag: "0.16.0"},
       {:dns, "~> 2.1.2"},

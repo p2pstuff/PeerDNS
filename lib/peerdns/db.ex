@@ -19,19 +19,19 @@ defmodule PeerDNS.DB do
 
   def get_owner(name) do
     case :ets.lookup(:peerdns_names, name) do
-      [{^name, pk, _, _}] -> {:ok, pk}
-      _ -> {:error, :not_found}
+      [{^name, pk, _, _, _}] -> {:ok, pk}
+      [] -> {:error, :not_found}
     end
   end
 
   def get_zone(name) do
     case :ets.lookup(:peerdns_names, name) do
-      [{^name, pk, _weight, _orig_source}] ->
+      [{^name, pk, _weight, _version, _orig_source}] ->
         case :ets.lookup(:peerdns_zone_data, {name, pk}) do
           [{{^name, ^pk}, data}] -> {:ok, data}
           _ -> {:error, :no_data}
         end
-      _ -> {:error, :not_found}
+      [] -> {:error, :not_found}
     end
   end
 
@@ -39,7 +39,7 @@ defmodule PeerDNS.DB do
   # Implementation
 
   def init(_) do
-    # The output map: {host name, public key, weight, origin source}
+    # The output map: {host name, public key, weight, last_version, origin source}
     :ets.new(:peerdns_names, [:set, :protected, :named_table])
 
     # The store map: { {name, pk}, zone_data }
@@ -76,18 +76,22 @@ defmodule PeerDNS.DB do
     for zd <- vals do
       pk = zd.pk
       case :ets.lookup(:peerdns_names, zd.name) do
-        [{_, ^pk, _, _}] ->
-          case :ets.lookup(:peerdns_zone_data, {zd.name, zd.pk}) do
+        [{_, ^pk, weight, _ver, src}] ->
+          new_ver = case :ets.lookup(:peerdns_zone_data, {zd.name, zd.pk}) do
             [{_, prev_zd}] ->
               case PeerDNS.ZoneData.update(prev_zd, zd.json, zd.signature) do
                 {:ok, new_zd} ->
                   :ets.insert(:peerdns_zone_data, {{zd.name, zd.pk}, new_zd})
-                _ -> nil
+                  new_zd.version
+                _ ->
+                  prev_zd.version
               end
             [] ->
               :ets.insert(:peerdns_zone_data, {{zd.name, zd.pk}, zd})
+              zd.version
           end
-        _ -> nil
+          :ets.insert(:peerdns_names, {zd.name, pk, weight, new_ver, src})
+        [] -> nil
       end
     end
     {:noreply, state}
@@ -95,7 +99,7 @@ defmodule PeerDNS.DB do
 
   defp update_name(name) do
     prev = case :ets.lookup(:peerdns_names, name) do
-      [{^name, pk, _, _}] -> pk
+      [{^name, pk, _, _, _}] -> pk
       [] -> nil
     end
     possibilities = :ets.tab2list(:peerdns_source_data)
@@ -112,7 +116,7 @@ defmodule PeerDNS.DB do
         if pk != prev do
           :ets.delete(:peerdns_zone_data, {name, prev})
         end
-        :ets.insert(:peerdns_names, {name, pk, weight, source})
+        :ets.insert(:peerdns_names, {name, pk, weight, 0, source})
     end
   end
 end

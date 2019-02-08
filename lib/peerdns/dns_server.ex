@@ -22,9 +22,7 @@ defmodule PeerDNS.DNSServer do
   def handle_info({:udp, sock, ip, port, data}, state) do
     record = DNS.Record.decode(data)
     spawn fn ->
-      Logger.info("Query: #{inspect(record, pretty: true)}")
       response = handle(record)
-      Logger.info("Response: #{inspect(response, pretty: true)}")
       :gen_udp.send(sock, ip, port, DNS.Record.encode(response))
     end
     {:noreply, state}

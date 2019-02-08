@@ -11,10 +11,21 @@ defmodule PeerDNS.Application do
       Supervisor.child_spec({PeerDNS.Source, src_args}, id: id)
     end
 
+    api_listen = Application.fetch_env!(:peerdns, :listen_api)
+    api_processes = for {{ip, port}, i} <- Enum.with_index(api_listen) do
+      id = String.to_atom "api#{i}"
+      {:ok, ip} = :inet.parse_address(String.to_charlist(ip))
+      Supervisor.child_spec(
+        {Plug.Cowboy, scheme: :http, plug: PeerDNS.API.Endpoint,
+          options: [ip: ip, port: port]},
+        id: id)
+    end
+
     children = [
       PeerDNS.DB,
+      PeerDNS.Neighbors,
       PeerDNS.DNSServer,
-    ] ++ sources
+    ] ++ sources ++ api_processes
 
     opts = [strategy: :one_for_one, name: PeerDNS.Supervisor]
     Supervisor.start_link(children, opts)
