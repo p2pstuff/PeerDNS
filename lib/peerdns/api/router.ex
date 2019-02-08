@@ -22,26 +22,17 @@ defmodule PeerDNS.API.Router do
   get "/names/pull" do
     cutoff = case conn.params["cutoff"] do
       val when is_number(val) and val > 0 and val <= 1 -> val
-      _ -> 1
+      _ -> 0
     end
-    names = :ets.tab2list(:peerdns_names)
-            |> Enum.filter(fn {_, _, w, _, _} -> w >= cutoff end)
-            |> Enum.map(fn{name, pk, weight, ver, _source} ->
-              {name, %{
-                "pk" => pk,
-                "weight" => weight,
-                "version" => ver,
-              }}
-            end)
-          |> Enum.into(%{})
+    names = PeerDNS.Sync.outgoing_set(cutoff)
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(names, pretty: true))
   end
 
   post "/names/push" do
-    %{"_json" => list} = conn.body_params
-    case PeerDNS.Sync.handle_incoming(list, conn.remote_ip) do
+    %{"added" => added, "removed" => removed, "zones" => zones} = conn.body_params
+    case PeerDNS.Sync.handle_incoming(added, removed, zones, conn.remote_ip) do
       :ok ->
         conn
         |> put_resp_content_type("application/json")

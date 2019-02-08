@@ -9,12 +9,12 @@ defmodule PeerDNS.DB do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def names_update(source_id, data) do
-    GenServer.cast(__MODULE__, {:names_update, source_id, data})
+  def handle_names_delta(source_id, data) do
+    GenServer.call(__MODULE__, {:handle_names_delta, source_id, data})
   end
 
   def zone_data_update(data) do
-    GenServer.cast(__MODULE__, {:zone_data_update, data})
+    GenServer.call(__MODULE__, {:zone_data_update, data})
   end
 
   def get_owner(name) do
@@ -46,33 +46,40 @@ defmodule PeerDNS.DB do
     # zone_data is an instance of PeerDNS.ZoneData
     :ets.new(:peerdns_zone_data, [:set, :protected, :named_table])
 
-    # The source data map:
-    # { source_identifier, last_updated, %{name => {pk, weight}} }
-    :ets.new(:peerdns_source_data, [:set, :protected, :named_table])
-
     {:ok, nil}
   end
 
-  def handle_cast({:names_update, source_id, data}, state) do
-    old_data = case :ets.lookup(:peerdns_source_data, source_id) do
-      [{^source_id, _, d}] -> d
-      [] -> %{}
+  def handle_call({:handle_names_delta, source_id, delta}, _from, state) do
+    for name <- delta.removed do
+      case :ets.lookup(:peerdns_names, name) do
+        [{^name, pk, _, _, ^source_id}] ->
+          :ets.delete(:peerdns_names, name)
+          :ets.delete(:peerdons_zone_data, {name, pk})
+          PeerDNS.Sync.delta_pack_remove_name(name)
+        _ -> nil
+      end
     end
-    k1 = MapSet.new(Map.keys(old_data))
-    k2 = MapSet.new(Map.keys(data))
-    changed_keys = MapSet.union(k1, k2)
-
-    curr_time = System.os_time :second
-    :ets.insert(:peerdns_source_data, {source_id, curr_time, data})
-
-    for name <- changed_keys do
-      update_name(name)
+    for {name, {pk, weight}} <- delta.added do
+      case :ets.lookup(:peerdns_names, name) do
+        [{^name, ^pk, old_weight, _, _}] ->
+          if weight > old_weight do
+            # this new info is the highest weight source
+            :ets.insert(:peerdns_names, {name, pk, weight, 0, source_id})
+            PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
+          end
+        [{^name, old_pk, old_weight, _, old_source}] when old_pk != pk ->
+          if old_source == source_id or weight > old_weight do
+            :ets.insert(:peerdns_names, {name, pk, weight, 0, source_id})
+            :ets.delete(:peerdons_zone_data, {name, old_pk})
+            PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
+          end
+        _ -> nil
+      end
     end
-    
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
-  def handle_cast({:zone_data_update, vals}, state) do
+  def handle_call({:zone_data_update, vals}, _from, state) do
     for zd <- vals do
       pk = zd.pk
       case :ets.lookup(:peerdns_names, zd.name) do
@@ -82,41 +89,20 @@ defmodule PeerDNS.DB do
               case PeerDNS.ZoneData.update(prev_zd, zd.json, zd.signature) do
                 {:ok, new_zd} ->
                   :ets.insert(:peerdns_zone_data, {{zd.name, zd.pk}, new_zd})
+                  PeerDNS.Sync.delta_pack_zone_change(new_zd)
                   new_zd.version
                 _ ->
                   prev_zd.version
               end
             [] ->
               :ets.insert(:peerdns_zone_data, {{zd.name, zd.pk}, zd})
+              PeerDNS.Sync.delta_pack_zone_change(zd)
               zd.version
           end
           :ets.insert(:peerdns_names, {zd.name, pk, weight, new_ver, src})
         [] -> nil
       end
     end
-    {:noreply, state}
-  end
-
-  defp update_name(name) do
-    prev = case :ets.lookup(:peerdns_names, name) do
-      [{^name, pk, _, _, _}] -> pk
-      [] -> nil
-    end
-    possibilities = :ets.tab2list(:peerdns_source_data)
-      |> Enum.map(fn {source, _, data} -> {source, data[name]} end)
-      |> Enum.filter(fn {_, x} -> x != nil end)
-      |> Enum.sort_by(fn {_, {_, w}} -> -w end)
-    case possibilities do
-      [] ->
-        if prev != nil do
-          :ets.delete(:peerdns_zone_data, {name, prev})
-        end
-        :ets.delete(:peerdns_names, name)
-      [{source, {pk, weight}} | _] ->
-        if pk != prev do
-          :ets.delete(:peerdns_zone_data, {name, prev})
-        end
-        :ets.insert(:peerdns_names, {name, pk, weight, 0, source})
-    end
+    {:reply, :ok, state}
   end
 end

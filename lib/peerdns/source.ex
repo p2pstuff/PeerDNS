@@ -70,45 +70,16 @@ defmodule PeerDNS.Source do
       _ -> state
     end
 
-    publish_names(state)
+    publish_names_delta(state, %{}, state.names)
     publish_zones(state)
+    PeerDNS.Sync.push_delta()
     {:ok, state}
-  end
-
-  def handle_call({:add_name, name, val}, _from, state) do
-    if state.editable do
-      state = %{state | names: Map.put(state.names, name, val)}
-      updated(state)
-    else
-      {:reply, {:error, :not_editable}, state}
-    end
   end
 
   def handle_call({:get_name, name}, _from, state) do
     case state.names[name] do
       nil -> {:reply, {:error, :not_found}, state}
       x -> {:reply, {:ok, x}, state}
-    end
-  end
-
-  def handle_call({:remove_name, name}, _from, state) do
-    if state.editable do
-      state = %{state | names: Map.delete(state.names, name)}
-      updated(state)
-    else
-      {:reply, {:error, :not_editable}, state}
-    end
-  end
-
-  def handle_call({:add_zone, zone, weight}, _from, state) do
-    if state.editable do
-      state = %{state |
-        names: Map.put(state.names, zone.name, {zone.pk, weight}),
-        zones: Map.put(state.zones, zone.name, zone)
-      }
-      updated(state, true)
-    else
-      {:reply, {:error, :not_editable}, state}
     end
   end
 
@@ -119,30 +90,64 @@ defmodule PeerDNS.Source do
     end
   end
 
-  def handle_call({:remove_zone, name}, _from, state) do
+  def handle_call({:add_name, name, val}, _from, state) do
     if state.editable do
-      state = %{state |
-        names: Map.delete(state.names, name),
-        zones: Map.delete(state.zones, name)
-      }
-      updated(state, true)
+      new_names = Map.put(state.names, name, val)
+      updated(state, new_names)
     else
       {:reply, {:error, :not_editable}, state}
     end
   end
 
-  defp updated(state, zones \\ false) do
+  def handle_call({:remove_name, name}, _from, state) do
+    if state.editable do
+      new_names = Map.delete(state.names, name)
+      updated(state, new_names)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
+  end
+
+  def handle_call({:add_zone, zone, weight}, _from, state) do
+    if state.editable do
+      new_names = Map.put(state.names, zone.name, {zone.pk, weight})
+      new_zones = Map.put(state.zones, zone.name, zone)
+      updated(state, new_names, new_zones)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
+  end
+
+  def handle_call({:remove_zone, name}, _from, state) do
+    if state.editable do
+      new_names = Map.delete(state.names, name)
+      new_zones = Map.delete(state.zones, name)
+      updated(state, new_names, new_zones)
+    else
+      {:reply, {:error, :not_editable}, state}
+    end
+  end
+
+  defp updated(state, new_names, new_zones \\ nil) do
+    publish_names_delta(state, state.names, new_names)
+    state = if new_zones do
+      publish_zones(new_zones)
+      %{state | names: new_names, zones: new_zones}
+    else
+      %{state | names: new_names}
+    end
     save(state)
-    publish_names(state)
-    if zones do publish_zones(state) end
+    PeerDNS.Sync.push_delta()
     {:reply, :ok, state}
   end
 
-  defp publish_names(state) do
-    weighted = for {name, {pk, weight}} <- state.names, into: %{} do
-      {name, {pk, weight * state.weight}}
+  defp publish_names_delta(state, prev_names, new_names) do
+    names_delta = PeerDNS.Delta.calculate(prev_names, new_names)
+    if not PeerDNS.Delta.is_empty?(names_delta) do
+      names_delta = PeerDNS.Delta.map(names_delta,
+        fn {pk, w} -> {pk, w * state.weight} end)
+      PeerDNS.DB.handle_names_delta({:source, state.name}, names_delta)
     end
-    PeerDNS.DB.names_update({:source, state.name}, weighted)
   end
 
   defp publish_zones(state) do
