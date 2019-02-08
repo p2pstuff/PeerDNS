@@ -71,7 +71,7 @@ defmodule PeerDNS.Source do
     end
 
     :ok = publish_names_delta(state, %{}, state.names)
-    :ok = publish_zones(state)
+    :ok = publish_zones(state.zones)
     PeerDNS.Sync.push_delta()
     {:ok, state}
   end
@@ -150,8 +150,8 @@ defmodule PeerDNS.Source do
     end
   end
 
-  defp publish_zones(state) do
-    list = for {_, data} <- state.zones, do: %{data | sk: nil}
+  defp publish_zones(zones) do
+    list = for {_, data} <- zones, do: %{data | sk: nil}
     PeerDNS.DB.zone_data_update(list)
   end
 
