@@ -93,7 +93,9 @@ defmodule PeerDNS.Sync do
 
   def handle_cast(:pull, state) do
     for {ip, args} <- PeerDNS.Neighbors.get do
-      spawn_link fn -> pull_task(ip, args) end
+      if args[:pull] do
+        spawn_link fn -> pull_task(ip, args) end
+      end
     end
     {:noreply, state}
   end
@@ -123,7 +125,9 @@ defmodule PeerDNS.Sync do
       Logger.info("Pushing delta: #{nadd} new or modified names, #{ndel} deleted names, #{nzone} new or modified zones")
       data = push_data(state)
       for {ip, args} <- PeerDNS.Neighbors.get do
-        spawn_link fn -> push_task(data, ip, args) end
+        if args[:push] do
+          spawn_link fn -> push_task(data, ip, args) end
+        end
       end
       state = %{ name_delta: %Delta{}, zones_delta: %{} }
       {:noreply, state}

@@ -3,8 +3,6 @@ defmodule PeerDNS.DB do
 
   require Logger
 
-  @expiration_time 3600*24
-
   # API
 
   def start_link(args) do

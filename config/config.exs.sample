@@ -93,6 +93,9 @@ config :peerdns, open_weight: 0.1
 
 config :peerdns, cutoff: 0.05
 
+config :peerdns, entry_expiration_time: 3600*24
+config :peerdns, full_pull_interval: 3600*12
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.
