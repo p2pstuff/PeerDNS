@@ -63,6 +63,8 @@ defmodule PeerDNS.API.Router do
     end
   end
 
+  forward "/privileged", to: PeerDNS.API.Privileged
+
   match _ do
     response = %{"result" => "error", "reason" => "not found"}
     conn
