@@ -12,7 +12,7 @@ defmodule PeerDNS.DNSServer do
     sockets = for {ip, port} <- listen_dns do
       {:ok, addr} = :inet.parse_address(String.to_charlist ip)
       {:ok, sock} = :gen_udp.open(port, [:binary, ip: addr, active: true])
-      IO.puts("Server listening at #{ip}:#{port}")
+      Logger.info("Server listening at #{ip}:#{port}")
       sock
     end
 
@@ -82,8 +82,8 @@ defmodule PeerDNS.DNSServer do
                 |> Enum.map(&String.to_charlist/1)
               {:cname, [val]} ->
                 String.to_charlist val
-              {:mx, [host, priority]} ->
-                {host, priority}
+              {:mx, [prio, server]} ->
+                {prio, String.to_charlist(server)}
             end
             %DNS.Resource{
               domain: query.domain,

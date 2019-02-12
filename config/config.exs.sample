@@ -1,6 +1,10 @@
 use Mix.Config
 
 
+# Remove useless new lines
+config :logger, :console,
+  format: "\r$time $metadata[$level] $levelpad$message\n"
+
 # Set info logging level (optionnal)
 config :logger, level: :info
 

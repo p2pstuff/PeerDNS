@@ -51,6 +51,8 @@ defmodule PeerDNS do
           end
         {"CNAME", [addr]} -> is_binary(addr)
         {"TXT", txts} -> Enum.all?(txts, &is_binary/1)
+        {"MX", [prio, server]} when is_integer(prio) and is_binary(server) ->
+          prio > 0
         _ -> false
       end
     end
