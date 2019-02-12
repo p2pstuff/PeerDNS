@@ -1,6 +1,8 @@
 defmodule PeerDNS.API.Endpoint do
   use Plug.Router
 
+  plug CORSPlug
+
   plug :match
 
   plug Plug.Parsers,
