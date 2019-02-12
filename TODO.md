@@ -1,5 +1,3 @@
-* Entry expiration for entries pulled from other servers
-
 * Regular pulls
 * Pulls with various intervals and varous quantities of data.
   Example: every 5 min with cutoff 0.8

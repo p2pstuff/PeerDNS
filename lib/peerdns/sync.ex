@@ -30,8 +30,8 @@ defmodule PeerDNS.Sync do
 
   def outgoing_set(cutoff) do
     :ets.tab2list(:peerdns_names)
-    |> Enum.filter(fn {_, _, w, _, _} -> w >= cutoff end)
-    |> Enum.map(fn{name, pk, weight, ver, _source} ->
+    |> Enum.filter(fn {_n, _k, w, _v, _s, _t} -> w >= cutoff end)
+    |> Enum.map(fn{name, pk, weight, ver, _source, _time} ->
       {name, %{
         "pk" => pk,
         "weight" => weight,
@@ -152,8 +152,8 @@ defmodule PeerDNS.Sync do
 
     source_weight = ip_source_weight(ip)
     source_id = ip_source_id(ip)
-    previous_names = :ets.match_object(:peerdns_names, {:_, :_, :_, :_, source_id})
-                     |> Enum.map(&(elem(&1, 1)))
+    previous_names = :ets.match_object(:peerdns_names, {:'$1', :_, :_, :_, source_id, :_})
+                     |> Enum.map(fn [name] -> name end)
                      |> Enum.filter(&(data[&1] == nil))
     adds = data
            |> Enum.map(fn {name, val} ->
@@ -170,7 +170,7 @@ defmodule PeerDNS.Sync do
                    |> Enum.map(fn {name, data} ->
                      new_ver = data["version"]
                      true = is_integer new_ver
-                     case :ets.match(:peerdns_names, {name, data["pk"], :_, :"$1", :_}) do
+                     case :ets.match(:peerdns_names, {name, data["pk"], :_, :"$1", :_, :_}) do
                        [[old_ver]] when old_ver < new_ver-> {name, data["pk"]}
                        _ -> nil
                      end
