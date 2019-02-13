@@ -61,4 +61,13 @@ defmodule PeerDNS do
   def is_entry_valid?(_) do
     false
   end
+
+  def is_privileged_api_ip?(ip) do
+    cfg = Application.fetch_env!(:peerdns, :privileged_api_hosts)
+    ips = for str <- cfg do
+      {:ok, addr} = :inet.parse_address(String.to_charlist str)
+      addr
+    end
+    ip in ips
+  end
 end

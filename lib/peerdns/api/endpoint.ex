@@ -14,7 +14,9 @@ defmodule PeerDNS.API.Endpoint do
 
   forward "/api", to: PeerDNS.API.Router
 
-  match _ do
-    send_resp(conn, 404, "Not found.\n")
+  get "/" do
+    send_file(conn, 200, "ui/build/index.html")
   end
+
+  forward "/", to: Plug.Static, at: "/", from: "ui/build/"
 end

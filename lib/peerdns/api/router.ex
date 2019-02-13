@@ -13,6 +13,7 @@ defmodule PeerDNS.API.Router do
       "version" => PeerDNS.MixProject.project[:version],
       "tld" => Application.fetch_env!(:peerdns, :tld),
       "operator" => Application.fetch_env!(:peerdns, :operator),
+      "privileged" => PeerDNS.is_privileged_api_ip?(conn.remote_ip)
     }
     conn
     |> put_resp_content_type("application/json")

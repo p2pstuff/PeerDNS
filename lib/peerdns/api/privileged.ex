@@ -6,12 +6,7 @@ defmodule PeerDNS.API.PrivilegeChecker do
   end
 
   def call(conn, _opts) do
-    cfg = Application.fetch_env!(:peerdns, :privileged_api_hosts)
-    ips = for str <- cfg do
-      {:ok, addr} = :inet.parse_address(String.to_charlist str)
-      addr
-    end
-    if not conn.remote_ip in ips do
+    if not PeerDNS.is_privileged_api_ip?(conn.remote_ip) do
       response = %{"result" => "error", "reason" => "forbidden"}
       conn
       |> put_resp_content_type("application/json")
