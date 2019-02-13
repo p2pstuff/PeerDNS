@@ -109,8 +109,13 @@ defmodule PeerDNS.Source do
 
   def handle_call({:remove_name, name}, _from, state) do
     if state.editable do
-      new_names = Map.delete(state.names, name)
-      updated(state, new_names)
+      case state.zones[name] do
+        nil ->
+          new_names = Map.delete(state.names, name)
+          updated(state, new_names)
+        _ ->
+          {:error, :have_zone_data}
+      end
     else
       {:reply, {:error, :not_editable}, state}
     end

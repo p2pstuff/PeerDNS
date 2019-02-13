@@ -39,7 +39,7 @@ class Zone extends Component {
             </thead>
             <tbody>
               {data.entries.map((item)=>
-                  <ListItem item={item} />
+                  <ListItem key={item.join(" ")} item={item} />
               )}
             </tbody>
           </Table>

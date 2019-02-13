@@ -58,6 +58,67 @@ defmodule PeerDNS.API.Privileged do
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
+  
+  post "/source/:id" do
+    id = check_source(id)
+    result = case conn.params["action"] do
+      "add_name" ->
+        cond do
+          not PeerDNS.is_zone_name_valid?(conn.params["name"]) ->
+            {:error, :invalid_name}
+          not PeerDNS.is_pk_valid?(conn.params["pk"]) ->
+            {:error, :invalid_pk}
+          not PeerDNS.is_weight_valid?(conn.params["weight"]) ->
+            {:error, :invalid_weight}
+          true ->
+            PeerDNS.Source.add_name(id, conn.params["name"],
+                conn.params["pk"], conn.params["weight"])
+        end
+      "del_name" ->
+        PeerDNS.Source.remove_name(id, conn.params["name"])
+      "add_zone" ->
+        cond do
+          not PeerDNS.is_zone_name_valid?(conn.params["name"]) ->
+            {:error, :invalid_name}
+          not PeerDNS.is_weight_valid?(conn.params["weight"]) ->
+            {:error, :invalid_weight}
+          not (conn.params["entries"] == nil or is_list(conn.params["entries"])) ->
+            {:error, :invalid_entry_list}
+          not (conn.params["entries"] == nil or Enum.all?(conn.params["entries"], &PeerDNS.is_entry_valid?/1)) ->
+            {:error, :invalid_entry}
+          true ->
+            prev_zone = case PeerDNS.Source.get_zone(id, conn.params["name"]) do
+              {:ok, zd} -> zd
+              _ ->
+                {:ok, zd} = PeerDNS.ZoneData.new(conn.params["name"])
+                zd
+            end
+            if conn.params["entries"] == nil do
+              PeerDNS.Source.add_zone(id, prev_zone, conn.params["weight"])
+            else
+              {:ok, new_zone} = PeerDNS.ZoneData.set_entries(prev_zone, conn.params["entries"])
+              PeerDNS.Source.add_zone(id, new_zone, conn.params["weight"])
+            end
+        end
+      "del_zone" ->
+        PeerDNS.Source.remove_zone(id, conn.params["name"])
+      _ -> {:error, :invalid_action}
+    end
+    case result do
+      :ok -> 
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Poison.encode!(%{"result" => "success"}, pretty: true))
+      {:error, reason} ->
+        response = %{
+          "result" => "error",
+          "reason" => Atom.to_string(reason),
+        }
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Poison.encode!(response, pretty: true))
+    end
+  end
 
   defp check_source(id) do
     [s1] = Application.fetch_env!(:peerdns, :sources)

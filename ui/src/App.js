@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
 
 import { Nav, Navbar, Container } from 'react-bootstrap';
-import { HashRouter as Router, Route } from 'react-router-dom';
+import { HashRouter as Router, Switch, Route } from 'react-router-dom';
 import { LinkContainer } from 'react-router-bootstrap';
 
 import Home from './Home';
 import List from './List';
 import Zone from './Zone';
+import Source from './Source';
 
-import { isPrivileged } from './api';
+import { isPrivileged, pListSources } from './api';
 
 class App extends Component {
   render() {
@@ -23,25 +24,57 @@ class App extends Component {
               <LinkContainer to="/list">
                 <Nav.Link>Browse</Nav.Link>
               </LinkContainer>
-              { isPrivileged() ?
-                <>
-                  <LinkContainer to="/my">
-                    <Nav.Link>My domains</Nav.Link>
-                  </LinkContainer>
-                </>
-              : <></>}
+              { isPrivileged() ?  <PrivilegedLinks /> : <></>}
             </Nav>
           </Navbar>
           <Container>
             <div className="maincontainer">
-              <Route exact path="/" component={Home} />
-              <Route exact path="/list" component={List} />
-              <Route path="/zone/:name/:pk" component={Zone} />
+              <Switch>
+                <Route exact path="/" component={Home} />
+                <Route exact path="/list" component={List} />
+                <Route path="/zone/:name/:pk" render={(props) => (
+                    <Zone key={props.match.params.pk} {...props} />
+                  )} />
+                <Route path="/source/:id" render={(props) => (
+                    <Source key={props.match.params.id} {...props} />
+                  )} />
+              </Switch>
             </div>
           </Container>
         </div>
       </Router>
     );
+  }
+}
+
+class PrivilegedLinks extends Component {
+  constructor() {
+    super();
+    this.state = { data: null };
+  }
+
+  componentDidMount() {
+    pListSources()
+    .then(json => this.setState({ data: json }));
+  }
+
+  render() {
+    if (this.state.data == null) {
+      return (
+        <></>
+      );
+    } else {
+      var sources = this.state.data.sources;
+      return (
+        <>
+          {Object.keys(sources).map((k) => (
+            <LinkContainer key={k} to={"/source/" + k}>
+              <Nav.Link>{sources[k].name}</Nav.Link>
+            </LinkContainer>
+          ))}
+        </>
+      );
+    }
   }
 }
 

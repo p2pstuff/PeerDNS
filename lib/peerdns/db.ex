@@ -58,7 +58,7 @@ defmodule PeerDNS.DB do
       case :ets.lookup(:peerdns_names, name) do
         [{^name, pk, _w, _v, ^source_id, _t}] ->
           :ets.delete(:peerdns_names, name)
-          :ets.delete(:peerdons_zone_data, {name, pk})
+          :ets.delete(:peerdns_zone_data, {name, pk})
           PeerDNS.Sync.delta_pack_remove_name(name)
         _ -> nil
       end
@@ -78,7 +78,7 @@ defmodule PeerDNS.DB do
         [{^name, old_pk, old_weight, _, old_source}] when old_pk != pk ->
           if old_source == source_id or weight > old_weight do
             :ets.insert(:peerdns_names, {name, pk, weight, 0, source_id, add_time})
-            :ets.delete(:peerdons_zone_data, {name, old_pk})
+            :ets.delete(:peerdns_zone_data, {name, old_pk})
             PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
           end
         [] ->

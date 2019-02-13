@@ -62,6 +62,10 @@ defmodule PeerDNS do
     false
   end
 
+  def is_weight_valid?(w) do
+    is_number(w) and w > 0 and w <= 1
+  end
+
   def is_privileged_api_ip?(ip) do
     cfg = Application.fetch_env!(:peerdns, :privileged_api_hosts)
     ips = for str <- cfg do
