@@ -27,7 +27,7 @@ defmodule PeerDNS do
   end
 
   def is_pk_valid?(pk) do
-    case Base.decode64(pk, padding: false) do
+    case Base.url_decode64(pk, padding: false) do
       {:ok, pk_bin} ->
         byte_size(pk_bin) == :enacl.sign_keypair_public_size
       _ -> false

@@ -59,6 +59,7 @@ config :peerdns, privileged_api_hosts: [
 # The sources of data for our name database
 config :peerdns, sources: [
   [
+    id: :my_domains,
     name: "My domains",
     file: "data/name_list.json",
     editable: true,
@@ -67,6 +68,7 @@ config :peerdns, sources: [
     ping_interval: 3600*12,   # 12 hours
   ],
   [
+    id: :my_modlist,
     name: "My modlist",
     file: "data/name_mod_list.json",
     editable: true,

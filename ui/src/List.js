@@ -24,7 +24,7 @@ class List extends Component {
           <tr>
             <th>Name</th>
             <th>Weight</th>
-            <th>Owner</th>
+            <th>Public key</th>
             <th>Version</th>
           </tr>
         </thead>

@@ -5,10 +5,8 @@ defmodule PeerDNS.Application do
 
   def start(_type, _args) do
     source_desc = Application.fetch_env!(:peerdns, :sources)
-    sources = for {src_args, i} <- Enum.with_index(source_desc, 1) do
-      id = String.to_atom "source#{i}"
-      src_args = [{:id, id} | src_args]
-      Supervisor.child_spec({PeerDNS.Source, src_args}, id: id)
+    sources = for src_args <- source_desc do
+      Supervisor.child_spec({PeerDNS.Source, src_args}, id: src_args[:id])
     end
 
     api_listen = Application.fetch_env!(:peerdns, :listen_api)

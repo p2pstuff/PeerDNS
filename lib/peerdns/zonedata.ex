@@ -5,8 +5,8 @@ defmodule PeerDNS.ZoneData do
   def new(name) do
     if PeerDNS.is_zone_name_valid?(name) do
       %{public: pk_bin, secret: sk_bin} = :enacl.sign_keypair
-      pk = Base.encode64(pk_bin, padding: false)
-      sk = Base.encode64(sk_bin, padding: false)
+      pk = Base.url_encode64(pk_bin, padding: false)
+      sk = Base.url_encode64(sk_bin, padding: false)
       entries = [
         [name, "TXT", "New PeerDNS domain, no entries yet."]
       ]
@@ -120,7 +120,7 @@ defmodule PeerDNS.ZoneData do
 
 
   defp encode_sign(sk, name, version, entries) do
-    case Base.decode64(sk, padding: false) do
+    case Base.url_decode64(sk, padding: false) do
       {:ok, sk_bin} ->
         json = Poison.encode!(%{
           "name" => name,
@@ -128,13 +128,13 @@ defmodule PeerDNS.ZoneData do
           "entries" => entries
         })
         signature = :enacl.sign_detached(json, sk_bin)
-        {:ok, json, Base.encode64(signature, padding: false)}
+        {:ok, json, Base.url_encode64(signature, padding: false)}
       err -> err
     end
   end
 
   defp decode_verify(pk, json, signature) do
-    case {Base.decode64(pk, padding: false), Base.decode64(signature, padding: false)} do
+    case {Base.url_decode64(pk, padding: false), Base.url_decode64(signature, padding: false)} do
       {{:ok, pk_bin}, {:ok, signature_bin}} ->
         case :enacl.sign_verify_detached(signature_bin, json, pk_bin) do
           {:ok, _} ->

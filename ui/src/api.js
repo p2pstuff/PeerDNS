@@ -15,7 +15,7 @@ function getNodeInfo() {
 }
 
 function getNameList(cutoff) {
-  cutoff = cutoff || 1.0;
+  cutoff = cutoff || 0.0;
   return axios.get(api_base + "/names/pull?cutoff=" + cutoff)
     .then((ret) => ret.data);
 }

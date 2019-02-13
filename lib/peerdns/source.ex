@@ -15,6 +15,10 @@ defmodule PeerDNS.Source do
     end
   end
 
+  def get_all(source) do
+    GenServer.call(source, :get_all)
+  end
+
   def add_name(source, name, pk, weight) do
     GenServer.call(source, {:add_name, name, {pk, weight}})
   end
@@ -74,6 +78,10 @@ defmodule PeerDNS.Source do
     :ok = publish_zones(state.zones)
     PeerDNS.Sync.push_delta()
     {:ok, state}
+  end
+
+  def handle_call(:get_all, _from, state) do
+    {:reply, {:ok, %{names: state.names, zones: state.zones}}, state}
   end
 
   def handle_call({:get_name, name}, _from, state) do
