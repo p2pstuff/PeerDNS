@@ -6,6 +6,8 @@
 
 * Pings!
 
-* Privileged API calls
+* CJDNS neighbors
+* Privileged API to list neighbors and add it to UI
 
-* A beautiful interface
+* Mutable trust list and UI
+

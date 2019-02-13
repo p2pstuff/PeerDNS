@@ -30,7 +30,7 @@ class List extends Component {
         </thead>
         <tbody>
           {domains.map((k)=>
-              <ListItem name={k} item={this.state.data[k]} />
+              <ListItem key={k} name={k} item={this.state.data[k]} />
           )}
         </tbody>
       </Table>
