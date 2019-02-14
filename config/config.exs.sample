@@ -10,9 +10,8 @@ config :logger, level: :info
 
 
 # Some trusted peer IPs
-# Replace with your own here and when they are used later
+# Replace with your own here and update reference below
 peer_fly11 = "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"
-
 
 # The contact info of the operator of this PeerDNS instance
 config :peerdns, operator: %{
@@ -30,8 +29,6 @@ config :peerdns, outside: {"208.67.222.222", 53}
 
 # Where to listen for DNS requests
 config :peerdns, listen_dns: [
-  # Use either the first two or the second two
-
   # {"0.0.0.0", 53}   # Open DNS server on IPv4 network
   # {"::", 53}        # Open DNS server on IPv6 network
 
@@ -49,7 +46,7 @@ config :peerdns, listen_api: [
 ]
 
 # What hosts are allowed to use the privileged PeerDNS API
-# These peers will be allowed to edit all the data files that have editable: true
+# These peers will be allowed to edit the data files and the trust list
 config :peerdns, privileged_api_hosts: [
   "127.0.0.1",
   "::ffff:7f00:1",
@@ -76,6 +73,7 @@ config :peerdns, sources: [
   ],
 ]
 
+# Under what conditions do we accept pings and endorse the pinged domains
 config :peerdns, ping: [
   accept: true,
   max_interval: 3600*24,    # one day
@@ -98,21 +96,21 @@ config :peerdns, cjdns_neighbors: [
   update_interval: 3600,
 ]
 
+# Allow any peer to push domains and accept them with a default very low weight
 config :peerdns, open: :accept
 config :peerdns, open_weight: 0.1
 
+# Don't store domains that have weight lower than this
 config :peerdns, cutoff: 0.05
 
+# Expire entries from other peers after one day
 config :peerdns, entry_expiration_time: 3600*24
+
+# Pull regularly from our neighbors (trust list & cjdns peers)
+# - every 1 hour, update entries with weight >= 0.5
+# - every 12 hours, update all entries
 config :peerdns, pull_policy: [
   [interval: 3600, cutoff: 0.5],
   [interval: 12*3600, cutoff: 0.05],
 ]
 
-# It is also possible to import configuration files, relative to this
-# directory. For example, you can emulate configuration per environment
-# by uncommenting the line below and defining dev.exs, test.exs and such.
-# Configuration from the imported file will override the ones defined
-# here (which is why it is important to import them last).
-#
-#     import_config "#{Mix.env()}.exs"
