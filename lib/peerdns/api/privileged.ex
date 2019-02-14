@@ -49,6 +49,7 @@ defmodule PeerDNS.API.Privileged do
     neighbors = neighbors
                 |> Enum.map(fn {ip, v} ->
                   %{"ip" => "#{:inet_parse.ntoa(ip)}",
+                    "name" => v.name,
                     "api_port" => v.api_port,
                     "source" => Atom.to_string(v.source),
                     "weight" => v.weight,

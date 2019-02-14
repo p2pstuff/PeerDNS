@@ -19,10 +19,11 @@ class Neighbors extends Component {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Source</th>
+            <th>Name</th>
+            <th>Weight</th>
             <th>IP</th>
             <th>API port</th>
-            <th>Weight</th>
+            <th>Source</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -39,10 +40,11 @@ class Neighbors extends Component {
 function ListItem(props) {
   return (
     <tr>
-      <td>{props.item.source}</td>
+      <td>{props.item.name}</td>
+      <td>{props.item.weight}</td>
       <td>{props.item.ip}</td>
 	    <td>{props.item.api_port} </td>
-      <td>{props.item.weight}</td>
+      <td>{props.item.source}</td>
       <td>{props.item.status}</td>
     </tr>
   );

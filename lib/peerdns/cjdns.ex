@@ -15,9 +15,9 @@ defmodule PeerDNS.CJDNS do
 
   def handle_info(:update, state) do
     nlist = neighbors()
-            |> Enum.map(fn ip ->
+            |> Enum.map(fn {ip, name} ->
               {:ok, ip} = :inet.parse_address(String.to_charlist(ip))
-              %{ip: ip, api_port: state.api_port, weight: state.weight}
+              %{ip: ip, api_port: state.api_port, weight: state.weight, name: name}
             end)
     PeerDNS.Sync.update_neighbors(:"CJDNS", nlist)
     Process.send_after(self(), :update, state.update_interval*1000)
@@ -36,10 +36,11 @@ defmodule PeerDNS.CJDNS do
       hash1 = :crypto.hash(:sha512, pk_bin)
       hash2 = Base.encode16(:crypto.hash(:sha512, hash1))
       first16 = binary_part(hash2, 0, 32)
-      0..7
-      |> Enum.map(fn i -> binary_part(first16, i*4, 4) end)
-      |> Enum.join(":")
-      |> String.downcase
+      ip = 0..7
+           |> Enum.map(fn i -> binary_part(first16, i*4, 4) end)
+           |> Enum.join(":")
+           |> String.downcase
+      {ip, n["user"]}
     end
   end
 

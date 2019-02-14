@@ -54,20 +54,20 @@ defmodule PeerDNS.Sync do
   end
 
   def handle_incoming(added, removed, zones, ip) do
-    neighbors = PeerDNS.Sync.get_neighbors
-    source_weight = ip_source_weight(neighbors, ip)
+    info = PeerDNS.Sync.get_neighbors()[ip]
+    source_weight = ip_source_weight(info)
     cutoff = Application.fetch_env!(:peerdns, :cutoff)
     if source_weight < cutoff do
       {:error, :not_authorized}
     else
-      source_id = ip_source_id(neighbors, ip)
+      source_id = ip_source_id(ip, info)
       try do
         added = added
                 |> Enum.map(fn {name, value} ->
                   %{"weight" => w, "pk" => pk} = value
                   true = PeerDNS.is_zone_name_valid?(name)
                   true = PeerDNS.is_pk_valid?(pk)
-                  true = is_number(w) and w >= 0 and w <= 1
+                  true = is_number(w) and w > 0 and w <= 1
                   {name, {pk, w * source_weight}}
                 end)
                 |> Enum.filter(fn {_, {_, w}} -> w >= cutoff end)
@@ -155,7 +155,7 @@ defmodule PeerDNS.Sync do
     cutoff = Application.fetch_env!(:peerdns, :cutoff)
     for {ip, args} <- neighbors do
       if state.neighbors[ip] == nil do
-        spawn_link fn -> pull_task(ip, args, cutoff) end
+        spawn_link fn -> pull_task(args, cutoff) end
       end
     end
     {:noreply, %{state | neighbor_sources: sources, neighbors: neighbors}}
@@ -185,8 +185,8 @@ defmodule PeerDNS.Sync do
     if nadd + ndel + nzone > 0 do
       Logger.info("Pushing delta: #{nadd} new or modified names, #{ndel} deleted names, #{nzone} new or modified zones")
       data = push_data(state)
-      for {ip, args} <- state.neighbors do
-        spawn_link fn -> push_task(data, ip, args) end
+      for {_, args} <- state.neighbors do
+        spawn_link fn -> push_task(args, data) end
       end
       state = %{ state | name_delta: %Delta{}, zones_delta: %{} }
       {:noreply, state}
@@ -197,8 +197,8 @@ defmodule PeerDNS.Sync do
   
   def handle_info({:pull, cutoff, interval}, state) do
     Logger.info("Launching pulls with cutoff #{cutoff} (interval #{interval}s)")
-    for {ip, args} <- state.neighbors do
-      spawn_link fn -> pull_task(ip, args, cutoff) end
+    for {_, args} <- state.neighbors do
+      spawn_link fn -> pull_task(args, cutoff) end
     end
     Process.send_after(self(), {:pull, cutoff, interval}, interval*1000)
     {:noreply, state}
@@ -211,16 +211,15 @@ defmodule PeerDNS.Sync do
     {:noreply, state}
   end
 
-  defp pull_task(ip, args, cutoff) do
-    host = api_host(ip, args)
-    Logger.info("Starting pull from #{host} with cutoff #{cutoff}...")
-    q_cutoff = cutoff / args[:weight]
-    data = http_get!(ip, "#{host}/api/names/pull", %{cutoff: to_string q_cutoff})
+  defp pull_task(args, cutoff) do
+    source_weight = ip_source_weight(args)
+    source_id = ip_source_id(args.ip, args)
+
+    Logger.info("Starting pull from #{:inet.ntoa(args.ip)} with cutoff #{cutoff}...")
+    q_cutoff = cutoff / source_weight
+    data = http_get!(args, "/api/names/pull", %{cutoff: to_string q_cutoff})
     data = Poison.decode!(data)
 
-    neighbors = PeerDNS.Sync.get_neighbors
-    source_weight = ip_source_weight(neighbors, ip)
-    source_id = ip_source_id(neighbors, ip)
     sel_previous_names = [{ {:'$1', :_, :'$2', :_, source_id, :_},
                             [ {:>=, :'$2', cutoff} ],
                             [ :'$1' ] }]
@@ -234,6 +233,7 @@ defmodule PeerDNS.Sync do
              true = PeerDNS.is_pk_valid?(val["pk"])
              {name, {pk, source_weight * weight}}
            end)
+           |> Enum.filter(fn {_, {_, w}} -> w >= cutoff end)
            |> Enum.into(%{})
     delta = %Delta{added: adds, removed: MapSet.new(previous_names)}
     PeerDNS.DB.handle_names_delta(source_id, delta)
@@ -250,7 +250,7 @@ defmodule PeerDNS.Sync do
                    |> Enum.filter(&(&1 != nil))
                    |> Enum.into(%{})
     req = Poison.encode!(%{"request" => old_versions})
-    missing_zones = http_post!(ip, "#{host}/api/zones/pull", req)
+    missing_zones = http_post!(args, "/api/zones/pull", req)
     zonedata = for zd <- Poison.decode!(missing_zones) do
       {:ok, zd} = PeerDNS.ZoneData.deserialize(zd["pk"], zd["json"], zd["signature"])
       zd
@@ -277,28 +277,28 @@ defmodule PeerDNS.Sync do
     Poison.encode!(dict, pretty: true)
   end
 
-  defp push_task(data, ip, args) do
-    endpoint = "#{api_host(ip, args)}/api/push"
-    http_post!(ip, endpoint, data)
+  defp push_task(args, data) do
+    http_post!(args, "/api/push", data)
   end
 
-  defp api_host(ip, args) do
-    if tuple_size(ip) == 4 do
-      "http://#{:inet_parse.ntoa(ip)}:#{args.api_port}"
+  defp api_host(args) do
+    if tuple_size(args.ip) == 4 do
+      "http://#{:inet_parse.ntoa(args.ip)}:#{args.api_port}"
     else
-      "http://[#{:inet_parse.ntoa(ip)}]:#{args.api_port}"
+      "http://[#{:inet_parse.ntoa(args.ip)}]:#{args.api_port}"
     end
   end
 
-  defp http_get!(ip, endpoint, query \\ nil) do
-    result = case HTTPotion.get(endpoint,
+  defp http_get!(args, endpoint, query \\ nil) do
+    host = api_host(args)
+    result = case HTTPotion.get(host <> endpoint,
       [query: query, ibrowse: [host_header: "peerdns"]])
     do
       %HTTPotion.ErrorResponse{} ->
-        GenServer.cast(__MODULE__, {:neighbor_status, ip, :down})
+        GenServer.cast(__MODULE__, {:neighbor_status, args.ip, :down})
         exit :normal
       r ->
-        GenServer.cast(__MODULE__, {:neighbor_status, ip, :up})
+        GenServer.cast(__MODULE__, {:neighbor_status, args.ip, :up})
         r
     end
     200 = result.status_code
@@ -306,17 +306,18 @@ defmodule PeerDNS.Sync do
     result.body
   end
 
-  defp http_post!(ip, endpoint, data) do
-    result = case HTTPotion.post(endpoint,
+  defp http_post!(args, endpoint, data) do
+    host = api_host(args)
+    result = case HTTPotion.post(host <> endpoint,
       [body: data,
         headers: ["Content-Type": "application/json"],
         ibrowse: [host_header: "peerdns"]])
     do
       %HTTPotion.ErrorResponse{} ->
-        GenServer.cast(__MODULE__, {:neighbor_status, ip, :down})
+        GenServer.cast(__MODULE__, {:neighbor_status, args.ip, :down})
         exit :normal
       r ->
-        GenServer.cast(__MODULE__, {:neighbor_status, ip, :up})
+        GenServer.cast(__MODULE__, {:neighbor_status, args.ip, :up})
         r
     end
     200 = result.status_code
@@ -324,16 +325,16 @@ defmodule PeerDNS.Sync do
     result.body
   end
 
-  defp ip_source_id(neighbors, ip) do
-    type = case neighbors[ip] do
+  defp ip_source_id(ip, info) do
+    type = case info do
       nil -> :open
       n -> n.source
     end
     {type, to_string(:inet_parse.ntoa ip)}
   end
 
-  defp ip_source_weight(neighbors, ip) do
-    case neighbors[ip] do
+  defp ip_source_weight(info) do
+    case info do
       nil ->
         if Application.fetch_env!(:peerdns, :open) == :accept do
           Application.fetch_env!(:peerdns, :open_weight)
