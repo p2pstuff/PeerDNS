@@ -17,7 +17,7 @@ class List extends Component {
 
   render() {
     var domains = Object.keys(this.state.data);
-    domains.sort((k1, k2) => this.state.data[k1].weight > this.state.data[k2].weight);
+    domains.sort((k1, k2) => this.state.data[k1].weight < this.state.data[k2].weight);
     return (
       <Table striped bordered hover>
         <thead>

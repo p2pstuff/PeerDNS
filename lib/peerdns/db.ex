@@ -66,11 +66,11 @@ defmodule PeerDNS.DB do
     add_time = System.os_time(:second)
     for {name, {pk, weight}} <- delta.added do
       case :ets.lookup(:peerdns_names, name) do
-        [{^name, ^pk, old_weight, version, _s, _t}] ->
-          if weight >= old_weight do
-            # highest weight or same weight and more recent, keep it
+        [{^name, ^pk, old_weight, version, old_source, _t}] ->
+          if weight >= old_weight or old_source == source_id do
+            # highest weight or more recent, keep it
             :ets.insert(:peerdns_names, {name, pk, weight, version, source_id, add_time})
-            if weight > old_weight do
+            if weight != old_weight do
               # if weight change, propagate
               PeerDNS.Sync.delta_pack_add_name(name, pk, weight)
             end
