@@ -8,12 +8,7 @@ import { pAddZone, pDelZone } from './api';
 class ZoneEditor extends Component {
   constructor(props) {
     super(props);
-    this.zentry = props.zentry;
-    this.nentry = props.nentry;
-
     this.state = { error: null };
-
-    this.entries = this.zentry.entries;
   }
 
   deleteZone() {
@@ -30,13 +25,12 @@ class ZoneEditor extends Component {
 
   deleteEntry(entry) {
     var that = this;
-    var new_entries = this.zentry.entries.filter((ent) =>
+    var new_entries = this.props.zentry.entries.filter((ent) =>
           JSON.stringify(ent) !== JSON.stringify(entry));
     pAddZone(this.props.source, this.props.name,
         new_entries, this.props.nentry.weight)
     .then(function (json) {
       if (json.result === "success") {
-        that.entries = new_entries;
         that.props.onChange();
       } else {
         that.setState({error: json.reason});
@@ -45,19 +39,30 @@ class ZoneEditor extends Component {
   }
 
   change(replaces, new_st) {
-    var new_entries = this.zentry.entries.filter((ent) =>
-          JSON.stringify(ent) !== JSON.stringify(replaces));
+    var new_entry = null;
     if (new_st.type === "MX") {
-      new_entries.push([new_st.name, "MX", parseInt(new_st.priority), new_st.value]);
+      new_entry = [new_st.name, "MX", parseInt(new_st.priority), new_st.value];
     } else {
-      new_entries.push([new_st.name, new_st.type, new_st.value]);
+      new_entry = [new_st.name, new_st.type, new_st.value];
     }
+
+    var found = false;
+    var new_entries = this.props.zentry.entries;
+    for (var i = 0; i < new_entries.length; i++) {
+      if (JSON.stringify(new_entries[i]) === JSON.stringify(replaces)) {
+        new_entries[i] = new_entry;
+        found = true;
+        break;
+      }
+    }
+    if (!found) new_entries.push(new_entry);
+
     var that = this;
     return pAddZone(this.props.source, this.props.name, new_entries, this.props.nentry.weight)
-    .then(function (json) {
-      if (json.result === "success") that.entries = new_entries;
-      return json;
-    });
+      .then(function (json) {
+        if (json.result === "success") that.props.onChange();
+        return json;
+      });
   }
 
   render() {
@@ -72,8 +77,7 @@ class ZoneEditor extends Component {
               <ZoneEntryForm title="Add entry"
                 variant="success"
                 actionText="Add entry"
-                changeFn={this.change.bind(this)}
-                onDone={this.props.onChange} />
+                changeFn={this.change.bind(this)} />
               &nbsp;
               <Confirm title="Are you sure?"
                 text="Do you really want to delete this zone? The secret key will be lost!"
@@ -100,7 +104,6 @@ class ZoneEditor extends Component {
                   {this.props.zentry.entries.map((item)=>
                       <ZoneEntry key={item.join(" ")} item={item}
                         changeFn={this.change.bind(this)}
-                        onChange={this.props.onChange}
                         onDelete={this.deleteEntry.bind(this, item)} />
                   )}
                 </tbody>
@@ -131,7 +134,7 @@ function ZoneEntry(props) {
           variant="primary" actionText="Edit"
           replaces={props.item}
           name={name} type={type} priority={priority} value={value}
-          changeFn={props.changeFn} onDone={props.onChange} />
+          changeFn={props.changeFn} />
         &nbsp;
         <Confirm title="Are you sure?"
           text="Do you really want to delete this entry?"
@@ -164,7 +167,6 @@ class ZoneEntryForm extends Component {
       .then(function (json) {
         if (json.result === "success") {
           that.setState({ show: false });
-          that.props.onDone();
         } else {
           that.setState({error: json.reason});
         }
@@ -247,3 +249,5 @@ class ZoneEntryForm extends Component {
 }
 
 export default ZoneEditor;
+
+// vim: set sts=2 ts=2 sw=2 tw=0 et :
