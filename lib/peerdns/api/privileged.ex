@@ -43,6 +43,24 @@ defmodule PeerDNS.API.Privileged do
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
 
+  get "/neighbors" do
+    neighbors = PeerDNS.Sync.get_neighbors
+    statuses = PeerDNS.Sync.get_neighbor_status
+    neighbors = neighbors
+                |> Enum.map(fn {ip, v} ->
+                  %{"ip" => "#{:inet_parse.ntoa(ip)}",
+                    "api_port" => v.api_port,
+                    "source" => Atom.to_string(v.source),
+                    "weight" => v.weight,
+                    "status" => Atom.to_string(statuses[ip] || :unknown)}
+                end)
+                |> Enum.sort_by(&(%{"up"=>0,"unknown"=>1,"down"=>2}[&1["status"]]))
+    response = %{ "neighbors" => neighbors }
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Poison.encode!(response, pretty: true))
+  end
+
   get "/source/:id" do
     id = check_source(id)
     {:ok, %{names: names, zones: zones}} = PeerDNS.Source.get_all(id)

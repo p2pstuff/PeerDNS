@@ -98,6 +98,7 @@ class ZoneEditor extends Component {
                     <th>Name</th>
                     <th>Type</th>
                     <th>Value</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>

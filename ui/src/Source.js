@@ -68,6 +68,7 @@ class Source extends Component {
                     <th>Name</th>
                     <th>Weight</th>
                     <th>Public key</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>

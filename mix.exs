@@ -22,6 +22,7 @@ defmodule PeerDNS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:bencode, "~> 0.3.0"},
       {:httpotion, "~> 3.1.0"},
       {:plug, "~> 1.6"},
       {:cowboy, "~> 2.4"},

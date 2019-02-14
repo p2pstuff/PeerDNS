@@ -12,7 +12,7 @@ defmodule PeerDNS.DNSServer do
     sockets = for {ip, port} <- listen_dns do
       {:ok, addr} = :inet.parse_address(String.to_charlist ip)
       {:ok, sock} = :gen_udp.open(port, [:binary, ip: addr, active: true])
-      Logger.info("Server listening at #{ip}:#{port}")
+      Logger.info("DNS server listening at #{ip}:#{port}")
       sock
     end
 

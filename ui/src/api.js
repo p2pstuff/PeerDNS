@@ -40,6 +40,11 @@ function pGetSource(id) {
     .then((ret) => ret.data);
 }
 
+function pGetNeighbors() {
+  return axios.get(api_base + "/privileged/neighbors")
+    .then((ret) => ret.data);
+}
+
 function pAddName(source_id, name, pk, weight) {
   return axios.post(api_base + "/privileged/source/" + source_id,
       {
@@ -81,7 +86,7 @@ function pDelZone(source_id, name) {
 }
 
 export { init, getNodeInfo, getNameList, getZones, isPrivileged,
-    pListSources, pGetSource,
+    pListSources, pGetSource, pGetNeighbors,
     pAddName, pDelName, pAddZone, pDelZone };
 
 // vim: set sts=2 ts=2 sw=2 tw=0 et :
