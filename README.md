@@ -5,6 +5,8 @@ A peer-to-peer DNS system based on a Web of Trust.
 Designed to work with CJDNS, strongly inspired by
 <https://docs.meshwith.me/notes/dns.html>.
 
+Talk: join the `#peerdns` channel on `irc.fc00.io`.
+
 
 ## How it works
 
@@ -66,7 +68,7 @@ sudo sysctl net.ipv4.ip_unprivileged_port_start=53
 Clone this repo and download Elixir dependencies:
 
 ```
-git clone https://github.com/Alexis211/PeerDNS
+git clone https://github.com/p2pstuff/PeerDNS
 cd PeerDNS
 mix deps.get
 ```
@@ -75,9 +77,24 @@ Copy `config/config.exs.sample` to `config/config.exs` and edit to your needs.
 Typically, you will want to add a few trusted peers to exchange data with. A
 few are provided in the sample but you might want to use other ones.
 
+To use the web UI, install `npm` and run the following commands:
+
+```
+cd ui
+npm install
+npm run build
+cd ..
+```
+
 Run PeerDNS:
 
 ```
 mix run --no-halt
 ```
 
+To be able to access PeerDNS domains as regular domains, you must replace your
+system's DNS servers to be `127.0.0.1`, so that the local PeerDNS instance will
+be queried instead of your network's original DNS server.
+
+PeerDNS also starts an API server at `http://localhost:14123`, which provides a
+user interface to create domains and edit your trust list.
