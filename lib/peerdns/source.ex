@@ -182,6 +182,6 @@ defmodule PeerDNS.Source do
     end
     data = %{"names" => name_list, "data" => zone_list}
     json = Poison.encode!(data, pretty: true)
-    File.write(state.file, json)
+    File.write!(state.file, json)
   end
 end

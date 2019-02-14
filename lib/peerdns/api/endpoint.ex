@@ -1,7 +1,7 @@
 defmodule PeerDNS.API.Endpoint do
   use Plug.Router
 
-  plug Plug.Logger
+  plug Plug.Logger, log: :debug
 
   plug CORSPlug
 

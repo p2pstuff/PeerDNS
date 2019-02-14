@@ -85,8 +85,35 @@ function pDelZone(source_id, name) {
   .then((ret) => ret.data);
 }
 
+function pGetTrustList() {
+  return axios.get(api_base + "/privileged/trustlist")
+    .then((ret) => ret.data);
+}
+
+function pTrustListAdd(name, ip, api_port, weight) {
+  return axios.post(api_base + "/privileged/trustlist",
+      {
+        "action": "add",
+        "name": name,
+        "ip": ip,
+        "api_port": api_port,
+        "weight": weight,
+      })
+  .then((ret) => ret.data);
+}
+
+function pTrustListDel(ip) {
+  return axios.post(api_base + "/privileged/trustlist",
+      {
+        "action": "del",
+        "ip": ip,
+      })
+  .then((ret) => ret.data);
+}
+
 export { init, getNodeInfo, getNameList, getZones, isPrivileged,
     pListSources, pGetSource, pGetNeighbors,
-    pAddName, pDelName, pAddZone, pDelZone };
+    pAddName, pDelName, pAddZone, pDelZone,
+    pGetTrustList, pTrustListAdd, pTrustListDel };
 
 // vim: set sts=2 ts=2 sw=2 tw=0 et :

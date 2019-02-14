@@ -105,13 +105,6 @@ defmodule PeerDNS.Sync do
       neighbor_status: %{},
     }
 
-    static_neighbors = Application.fetch_env!(:peerdns, :static_neighbors)
-                       |> Enum.map(fn opts ->
-                         {:ok, ip} = :inet.parse_address(String.to_charlist(opts[:ip]))
-                         Map.put(Map.new(opts), :ip, ip)
-                       end)
-    GenServer.cast(self(), {:update_neighbors, :"Static", static_neighbors})
-
     for pp <- Application.fetch_env!(:peerdns, :pull_policy) do
       dt = pp[:interval] * 1000
       Process.send_after(self(), {:pull, pp[:cutoff], pp[:interval]}, dt)

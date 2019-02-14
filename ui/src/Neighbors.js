@@ -20,7 +20,7 @@ class Neighbors extends Component {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Weight</th>
+            <th>Trust</th>
             <th>IP</th>
             <th>API port</th>
             <th>Source</th>

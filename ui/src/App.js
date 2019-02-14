@@ -9,6 +9,7 @@ import List from './List';
 import Zone from './Zone';
 import Source from './Source';
 import Neighbors from './Neighbors';
+import TrustList from './TrustList';
 
 import { isPrivileged, pListSources } from './api';
 
@@ -34,6 +35,7 @@ class App extends Component {
                 <Route exact path="/" component={Home} />
                 <Route exact path="/list" component={List} />
                 <Route exact path="/neighbors" component={Neighbors} />
+                <Route exact path="/trustlist" component={TrustList} />
                 <Route path="/zone/:name/:pk" render={(props) => (
                     <Zone key={props.match.params.pk} {...props} />
                   )} />
@@ -77,6 +79,9 @@ class PrivilegedLinks extends Component {
               <Nav.Link>{sources[k].name}</Nav.Link>
             </LinkContainer>
           ))}
+          <LinkContainer to={"/trustlist"}>
+            <Nav.Link>Trust list</Nav.Link>
+          </LinkContainer>
         </>
       );
     }

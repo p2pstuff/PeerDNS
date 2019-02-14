@@ -22,6 +22,7 @@ defmodule PeerDNS.Application do
     children = [
       PeerDNS.DB,
       PeerDNS.Sync,
+      PeerDNS.TrustList,
       PeerDNS.CJDNS,
       PeerDNS.DNSServer,
     ] ++ sources ++ api_processes

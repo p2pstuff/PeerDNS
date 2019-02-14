@@ -45,10 +45,7 @@ defmodule PeerDNS do
             _ -> false
           end
         {"AAAA", [addr]} when is_binary(addr) ->
-          case :inet.parse_address (String.to_charlist addr) do
-            {:ok, addr} -> tuple_size(addr) == 8
-            _ -> false
-          end
+          is_ipv6_valid?(addr)
         {"CNAME", [addr]} -> is_binary(addr)
         {"TXT", txts} -> Enum.all?(txts, &is_binary/1)
         {"MX", [prio, server]} when is_integer(prio) and is_binary(server) ->
@@ -73,5 +70,12 @@ defmodule PeerDNS do
       addr
     end
     ip in ips
+  end
+
+  def is_ipv6_valid?(ip) do
+    case :inet.parse_address (String.to_charlist ip) do
+      {:ok, addr} -> tuple_size(addr) == 8
+      _ -> false
+    end
   end
 end

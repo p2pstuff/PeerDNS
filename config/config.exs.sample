@@ -83,9 +83,12 @@ config :peerdns, ping: [
   weight: 0.6
 ]
 
-# Use these peers as neighbors in all cases
-config :peerdns, static_neighbors: [
-    [ip: peer_fly11, api_port: 14123, weight: 0.9]
+# Where to store our list of neighbors
+config :peerdns, trust_list_file: "data/trust_list.json"
+
+# Default list of neighbors
+config :peerdns, default_trust_list: [
+    [name: "fly11", ip: peer_fly11, api_port: 14123, weight: 0.9]
 ]
 
 # Look up our CJDNS neighbors by connecting to local cjdroute and try to
@@ -102,7 +105,6 @@ config :peerdns, cutoff: 0.05
 
 config :peerdns, entry_expiration_time: 3600*24
 config :peerdns, pull_policy: [
-  [interval: 600, cutoff: 0.8],
   [interval: 3600, cutoff: 0.5],
   [interval: 12*3600, cutoff: 0.05],
 ]
