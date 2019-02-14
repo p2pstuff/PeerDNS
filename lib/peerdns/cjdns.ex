@@ -61,8 +61,10 @@ defmodule PeerDNS.CJDNS do
     :ok = :gen_udp.send(sock, {127,0,0,1}, 11234, qenc)
     receive do
       {:udp, ^sock, _, _, resp} ->
+        :gen_udp.close sock
         Bencode.decode(resp)
     after 2000 ->
+        :gen_udp.close sock
         {:error, :timeout}
     end
   end

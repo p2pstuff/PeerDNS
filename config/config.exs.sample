@@ -85,13 +85,14 @@ config :peerdns, ping: [
 
 # Use these peers as neighbors in all cases
 config :peerdns, static_neighbors: [
-    [ip: peer_fly11, api_port: 14123, weight: 0.9, push: true, pull: true]
+    [ip: peer_fly11, api_port: 14123, weight: 0.9]
 ]
 
 # Look up our CJDNS neighbors by connecting to local cjdroute and try to
 # use them as neighbors
 config :peerdns, cjdns_neighbors: [
-  port: 14123, weight: 0.5, push: true, pull: true
+  api_port: 14123, weight: 0.5,
+  update_interval: 3600,
 ]
 
 config :peerdns, open: :accept
@@ -100,7 +101,11 @@ config :peerdns, open_weight: 0.1
 config :peerdns, cutoff: 0.05
 
 config :peerdns, entry_expiration_time: 3600*24
-config :peerdns, full_pull_interval: 3600*12
+config :peerdns, pull_policy: [
+  [interval: 600, cutoff: 0.8],
+  [interval: 3600, cutoff: 0.5],
+  [interval: 12*3600, cutoff: 0.05],
+]
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
