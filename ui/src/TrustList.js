@@ -50,7 +50,7 @@ class TrustList extends Component {
               <Table striped bordered hover>
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Peer Name</th>
                     <th>IP</th>
                     <th>API port</th>
                     <th>Trust</th>
@@ -165,7 +165,7 @@ class TrustEntryForm extends Component {
                 <Alert variant="danger">{this.state.err}</Alert>}
             <Form>
               <Form.Group controlId="formName">
-                <Form.Label>Name</Form.Label>
+                <Form.Label>Peer Name</Form.Label>
                 <Form.Control type="text" name="name" onChange={this.handleInputChange.bind(this)}
                   placeholder="Name" value={this.state.name} />
               </Form.Group>
@@ -184,11 +184,11 @@ class TrustEntryForm extends Component {
                   placeholder="14123" value={this.state.api_port} />
               </Form.Group>
               <Form.Group controlId="formWeight">
-                <Form.Label>Weight / Trust value</Form.Label>
+                <Form.Label>Trust value</Form.Label>
                 <Form.Control type="text" name="weight" onChange={this.handleInputChange.bind(this)}
                   placeholder="0.9" value={this.state.weight} />
                 <Form.Text className="text-muted">
-                  The weight of a peer corresponds to the trust you have in that peer.
+                  The trust value of a peer corresponds to the trust you have in that peer.
                   Trust values must be bigger than 0 and smaller than 1.
                 </Form.Text>
               </Form.Group>

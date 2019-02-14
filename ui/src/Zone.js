@@ -32,7 +32,7 @@ class Zone extends Component {
           <Table striped bordered hover>
             <thead>
               <tr>
-                <th>Name</th>
+                <th>Domain Name</th>
                 <th>Type</th>
                 <th>Value</th>
               </tr>

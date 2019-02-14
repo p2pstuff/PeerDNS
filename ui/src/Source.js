@@ -65,7 +65,7 @@ class Source extends Component {
               <Table striped bordered hover>
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Domain Name</th>
                     <th>Weight</th>
                     <th>Public key</th>
                     <th></th>
@@ -179,7 +179,7 @@ class NameForm extends Component {
                 <Alert variant="danger">{this.state.err}</Alert>}
             <Form>
               <Form.Group controlId="formName">
-                <Form.Label>Name</Form.Label>
+                <Form.Label>Domain Name</Form.Label>
                 { this.props.nameRO
                   ? <Form.Control name="name" onChange={this.handleInputChange.bind(this)}
                         type="text" placeholder="Name" value={this.state.name} readOnly />
@@ -275,7 +275,7 @@ class ZoneAddForm extends Component {
                 <Alert variant="danger">{this.state.err}</Alert>}
             <Form>
               <Form.Group controlId="formName">
-                <Form.Label>Name</Form.Label>
+                <Form.Label>Domain Name</Form.Label>
                 <Form.Control name="name" onChange={this.handleInputChange.bind(this)}
                       type="text" placeholder="Name" value={this.state.name} />
               </Form.Group>

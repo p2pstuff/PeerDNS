@@ -22,7 +22,7 @@ class List extends Component {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Domain Name</th>
             <th>Weight</th>
             <th>Public key</th>
             <th>Version</th>

@@ -95,7 +95,7 @@ class ZoneEditor extends Component {
               <Table striped bordered hover>
                 <thead>
                 <tr>
-                    <th>Name</th>
+                    <th>Domain Name</th>
                     <th>Type</th>
                     <th>Value</th>
                     <th></th>
@@ -206,7 +206,7 @@ class ZoneEntryForm extends Component {
                 <Alert variant="danger">{this.state.error}</Alert>}
             <Form>
               <Form.Group controlId="formName">
-                <Form.Label>Name</Form.Label>
+                <Form.Label>Domain Name</Form.Label>
                 <Form.Control name="name" onChange={this.handleInputChange.bind(this)}
                     type="text" placeholder="Name" value={this.state.name} />
               </Form.Group>

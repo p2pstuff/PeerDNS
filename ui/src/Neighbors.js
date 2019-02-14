@@ -19,7 +19,7 @@ class Neighbors extends Component {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Peer Name</th>
             <th>Trust</th>
             <th>IP</th>
             <th>API port</th>
