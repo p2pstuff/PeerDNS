@@ -111,6 +111,9 @@ defmodule PeerDNS.DB do
               zd.version
           end
           :ets.insert(:peerdns_names, {zd.name, pk, weight, new_ver, src, time})
+        [{_, pk2, _weight, _ver, _src, _time}] when pk2 != pk ->
+          Logger.info("Ignoring information for zone #{zd.name} with wrong pk")
+          nil
         [] -> nil
       end
     end
