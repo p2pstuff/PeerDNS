@@ -12,18 +12,22 @@ class Zone extends Component {
   }
 
   componentDidMount() {
+    var that = this;
     getZones({[this.name]: this.pk})
-    .then(json => this.setState({ data: json}));
+    .then(function (json) {
+      if (json.length > 0)
+        that.setState({ data: json[0]})
+    });
   }
 
   render() {
     if (this.state.data == null) {
       return (
-        <p>Loading...</p>
+        <p>No data...</p>
       );
     } else {
-      var pk = this.state.data[0].pk;
-      var data = JSON.parse(this.state.data[0].json);
+      var pk = this.state.data.pk;
+      var data = JSON.parse(this.state.data.json);
       return (
         <>
           <h1>Zone {data.name}</h1>
