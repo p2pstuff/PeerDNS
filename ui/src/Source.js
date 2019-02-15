@@ -47,7 +47,7 @@ class Source extends Component {
           <>
             {this.state.error &&
                 <Alert variant="danger">{this.state.error}</Alert>}
-            <h1>Zones</h1>
+            <h3>Zones</h3>
             {Object.keys(zones).length === 0 ? <p>No zones defined.</p> :
               Object.keys(zones).map((k)=>
                 <ZoneEditor key={k}
@@ -59,7 +59,7 @@ class Source extends Component {
             <ZoneAddForm sourceId={this.id} variant="success" title="Create new zone"
               actionText="Create" onDone={this.reload.bind(this)} />
             <hr />
-            <h1>Names</h1>
+            <h3>Names</h3>
             {Object.keys(names).filter((k) => zones[k] === undefined).length === 0
                 ? <p>No names defined.</p> :
               <Table striped bordered hover>
