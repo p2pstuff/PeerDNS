@@ -75,6 +75,7 @@ class ZoneEditor extends Component {
                 <Alert variant="danger">{this.state.error}</Alert>}
             <div className="float-right">
               <ZoneEntryForm title="Add entry"
+                name={this.props.name}
                 variant="success"
                 actionText="Add entry"
                 changeFn={this.change.bind(this)} />

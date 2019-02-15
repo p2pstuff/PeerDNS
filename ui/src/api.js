@@ -45,6 +45,12 @@ function pGetNeighbors() {
     .then((ret) => ret.data);
 }
 
+function pCheckName(name) {
+  return axios.get(api_base + "/privileged/check",
+    { params: {name: name} })
+  .then((ret) => ret.data);
+}
+
 function pAddName(source_id, name, pk, weight) {
   return axios.post(api_base + "/privileged/source/" + source_id,
       {
@@ -113,7 +119,7 @@ function pTrustListDel(ip) {
 
 export { init, getNodeInfo, getNameList, getZones, isPrivileged,
     pListSources, pGetSource, pGetNeighbors,
-    pAddName, pDelName, pAddZone, pDelZone,
+    pCheckName, pAddName, pDelName, pAddZone, pDelZone,
     pGetTrustList, pTrustListAdd, pTrustListDel };
 
 // vim: set sts=2 ts=2 sw=2 tw=0 et :

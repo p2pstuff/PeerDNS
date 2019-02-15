@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Table, Alert, Form, Modal, Button } from 'react-bootstrap';
 
-import { pGetSource, pAddName, pDelName, pAddZone } from './api';
+import { pCheckName, pGetSource, pAddName, pDelName, pAddZone } from './api';
 
 import ZoneEditor from './ZoneEditor';
 
@@ -48,6 +48,8 @@ class Source extends Component {
             {this.state.error &&
                 <Alert variant="danger">{this.state.error}</Alert>}
             <h3>Zones</h3>
+            <p>In this section, you can create your own DNS zones and edit the corresponding entries.
+              Use it to announce your domain names to the PeerDNS network.</p>
             {Object.keys(zones).length === 0 ? <p>No zones defined.</p> :
               Object.keys(zones).map((k)=>
                 <ZoneEditor key={k}
@@ -60,6 +62,10 @@ class Source extends Component {
               actionText="Create" onDone={this.reload.bind(this)} />
             <hr />
             <h3>Names</h3>
+            <p>In this section, you can endorse names that you don't own, in the case of a conflict
+              between two conflicting attributions of that name. To endorse a name, you must know
+              the public key of the user you want to favour. You can also select
+              a trust value (weight) to attribute to that endorsement.</p>
             {Object.keys(names).filter((k) => zones[k] === undefined).length === 0
                 ? <p>No names defined.</p> :
               <Table striped bordered hover>
@@ -193,7 +199,7 @@ class NameForm extends Component {
                   placeholder="VFp7TXbZ4..." value={this.state.pk} />
               </Form.Group>
               <Form.Group controlId="formWeight">
-                <Form.Label>Weight</Form.Label>
+                <Form.Label>Weight / trust value</Form.Label>
                 <Form.Control type="text" name="weight" onChange={this.handleInputChange.bind(this)}
                   placeholder="1.0" value={this.state.weight} />
               </Form.Group>
@@ -223,6 +229,8 @@ class ZoneAddForm extends Component {
       show: false,
       err: null,
       name: props.name || "",
+      nameValid: false,
+      nameTaken: false,
     };
   }
 
@@ -258,6 +266,14 @@ class ZoneAddForm extends Component {
     this.setState({
       [name]: value
     });
+
+    var that = this;
+    pCheckName(value)
+    .then(function (json) {
+      if (json.name === that.state.name) {
+        that.setState({nameTaken: json.taken, nameValid: json.valid});
+      }
+    });
   }
 
   render() {
@@ -278,6 +294,12 @@ class ZoneAddForm extends Component {
                 <Form.Label>Domain Name</Form.Label>
                 <Form.Control name="name" onChange={this.handleInputChange.bind(this)}
                       type="text" placeholder="Name" value={this.state.name} />
+                {(!this.state.nameValid?
+                    <Form.Text>This name is <strong className="text-danger">invalid</strong></Form.Text>
+                  : (this.state.nameTaken?
+                    <Form.Text>This name is <strong className="text-warning">already used by someone</strong>, but you can use it as well.</Form.Text>
+                    : <Form.Text>This name is <strong className="text-success">free to use</strong>.</Form.Text>
+                  ))}
               </Form.Group>
             </Form>
           </Modal.Body>

@@ -62,6 +62,22 @@ defmodule PeerDNS.API.Privileged do
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
 
+  get "/check" do
+    name = conn.params["name"]
+    response = if PeerDNS.is_full_name_valid?(name) do
+      taken = case :ets.lookup(:peerdns_names, name) do
+        [] -> false
+        _ -> true
+      end
+      %{"name" => name, "valid" => true, "taken" => taken}
+    else
+      %{"name" => name, "valid" => false, "taken" => false}
+    end
+    conn
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, Poison.encode!(response, pretty: true))
+  end
+
   get "/source/:id" do
     id = check_source(id)
     {:ok, %{names: names, zones: zones}} = PeerDNS.Source.get_all(id)
@@ -77,7 +93,7 @@ defmodule PeerDNS.API.Privileged do
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
-  
+
   post "/source/:id" do
     id = check_source(id)
     result = case conn.params["action"] do
@@ -168,7 +184,7 @@ defmodule PeerDNS.API.Privileged do
 
   defp api_action_result(conn, result) do
     case result do
-      :ok -> 
+      :ok ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(200, Poison.encode!(%{"result" => "success"}, pretty: true))
