@@ -3,7 +3,7 @@ defmodule PeerDNS.DB do
 
   require Logger
 
-  @cleanup_interval 60
+  @cleanup_interval 600
 
   # API
 
@@ -130,15 +130,17 @@ defmodule PeerDNS.DB do
       [:'$1', :'$2', :'$3']
     }]
     values = :ets.select(:peerdns_names, cleanup_select)
+             |> Enum.filter(fn [_name, _pk, source] ->
+               case source do
+                 {:source, _} -> false
+                 _ -> true
+               end
+             end)
     if values != [] do
       Logger.info("Expiring #{Enum.count values} names")
-      for [name, pk, source] <- values do
-        case source do
-          {:source, _} -> nil   # don't expire local entries
-          _ ->
-            :ets.delete(:peerdns_names, name)
-            :ets.delete(:peerdns_zone_data, {name, pk})
-        end
+      for [name, pk, _source] <- values do
+        :ets.delete(:peerdns_names, name)
+        :ets.delete(:peerdns_zone_data, {name, pk})
       end
     end
 
