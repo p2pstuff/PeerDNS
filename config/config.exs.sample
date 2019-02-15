@@ -22,7 +22,7 @@ config :peerdns, operator: %{
 }
 
 # The TLDs for which PeerDNS will handle naming
-config :peerdns, tld: [".peer", ".mesh", ".h", ".hype", ".fc00"]
+config :peerdns, tld: [".p2p", ".mesh", ".h", ".hype", ".fc00"]
 
 # For other TLDs, DNS requests are proxied to this DNS server
 config :peerdns, outside: {"208.67.222.222", 53}
