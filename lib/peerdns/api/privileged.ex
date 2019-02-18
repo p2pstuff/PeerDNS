@@ -43,6 +43,11 @@ defmodule PeerDNS.API.Privileged do
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
 
+  post "/pull" do
+    PeerDNS.Sync.start_full_pull()
+    api_action_result(conn, :ok)
+  end
+
   get "/neighbors" do
     neighbors = PeerDNS.Sync.get_neighbors
     statuses = PeerDNS.Sync.get_neighbor_status

@@ -127,7 +127,7 @@ defmodule PeerDNS.DB do
     cleanup_select = [{
       {:'$1', :'$2', :_, :_, :'$3', :'$4'},      # Pattern
       [{:<, :'$4', limit_time}],                 # Condition
-      [:'$1', :'$2', :'$3']
+      [[:'$1', :'$2', :'$3']]
     }]
     values = :ets.select(:peerdns_names, cleanup_select)
              |> Enum.filter(fn [_name, _pk, source] ->
@@ -141,7 +141,9 @@ defmodule PeerDNS.DB do
       for [name, pk, _source] <- values do
         :ets.delete(:peerdns_names, name)
         :ets.delete(:peerdns_zone_data, {name, pk})
+        PeerDNS.Sync.delta_pack_remove_name(name)
       end
+      PeerDNS.Sync.push_delta()
     end
 
     Process.send_after(self(), :cleanup, @cleanup_interval * 1000)

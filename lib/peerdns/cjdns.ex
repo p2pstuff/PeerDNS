@@ -9,8 +9,12 @@ defmodule PeerDNS.CJDNS do
 
   def init(_) do
     params = Application.fetch_env!(:peerdns, :cjdns_neighbors)
-    send(self(), :update)
-    {:ok, Map.new(params)}
+    if params[:enable] do
+      send(self(), :update)
+      {:ok, Map.new(params)}
+    else
+      {:ok, nil}
+    end
   end
 
   def handle_info(:update, state) do

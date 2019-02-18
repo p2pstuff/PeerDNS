@@ -92,8 +92,9 @@ config :peerdns, default_trust_list: [
 # Look up our CJDNS neighbors by connecting to local cjdroute and try to
 # use them as neighbors
 config :peerdns, cjdns_neighbors: [
-  api_port: 14123, weight: 0.5,
+  enable: true,
   update_interval: 3600,
+  api_port: 14123, weight: 0.5,
 ]
 
 # Allow any peer to push domains and accept them with a default very low weight

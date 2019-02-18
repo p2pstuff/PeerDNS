@@ -40,6 +40,11 @@ defmodule PeerDNS.Sync do
     GenServer.cast(__MODULE__, :push_delta)
   end
 
+  def start_full_pull() do
+    cutoff = Application.fetch_env!(:peerdns, :cutoff)
+    send(__MODULE__, {:pull, cutoff, -1})
+  end
+
   def outgoing_set(cutoff) do
     :ets.tab2list(:peerdns_names)
     |> Enum.filter(fn {_n, _k, w, _v, _s, _t} -> w >= cutoff end)
@@ -200,7 +205,9 @@ defmodule PeerDNS.Sync do
     for {_, args} <- state.neighbors do
       spawn_link fn -> pull_task(args, cutoff) end
     end
-    Process.send_after(self(), {:pull, cutoff, interval}, interval*1000)
+    if interval > 0 do
+      Process.send_after(self(), {:pull, cutoff, interval}, interval*1000)
+    end
     {:noreply, state}
   end
 
@@ -226,8 +233,7 @@ defmodule PeerDNS.Sync do
     sel_previous_names = [{ {:'$1', :_, :'$2', :_, source_id, :_},
                             [ {:>=, :'$2', cutoff} ],
                             [ :'$1' ] }]
-    previous_names = :ets.match_object(:peerdns_names, sel_previous_names)
-                     |> Enum.map(fn [name] -> name end)
+    previous_names = :ets.select(:peerdns_names, sel_previous_names)
                      |> Enum.filter(&(data[&1] == nil))
     adds = data
            |> Enum.map(fn {name, val} ->
@@ -246,8 +252,9 @@ defmodule PeerDNS.Sync do
                      new_ver = data["version"]
                      true = is_integer new_ver
                      case :ets.match(:peerdns_names, {name, data["pk"], :_, :"$1", :_, :_}) do
-                       [[old_ver]] when old_ver < new_ver-> {name, data["pk"]}
-                       _ -> nil
+                       [[old_ver]] ->
+                         if old_ver < new_ver do {name, data["pk"]} else nil end
+                       [] -> nil
                      end
                    end)
                    |> Enum.filter(&(&1 != nil))
