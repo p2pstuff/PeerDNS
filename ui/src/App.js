@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 
 import { Nav, Navbar, Container } from 'react-bootstrap';
 import { HashRouter as Router, Switch, Route } from 'react-router-dom';
 import { LinkContainer } from 'react-router-bootstrap';
 
+import HostEntry from './HostEntry';
 import Home from './Home';
 import List from './List';
 import Zone from './Zone';
@@ -14,6 +16,10 @@ import TrustList from './TrustList';
 import { isPrivileged, pListSources } from './api';
 
 class App extends Component {
+  changeServer() {
+    ReactDOM.render(<HostEntry server={this.props.server} />, document.getElementById('root'));
+  }
+
   render() {
     return (
       <Router>
@@ -22,12 +28,19 @@ class App extends Component {
             <LinkContainer to="/">
               <Navbar.Brand>PeerDNS</Navbar.Brand>
             </LinkContainer>
-            <Nav>
-              <LinkContainer to="/list">
-                <Nav.Link>Browse</Nav.Link>
-              </LinkContainer>
-              { isPrivileged() ?  <PrivilegedLinks /> : <></>}
-            </Nav>
+            <Navbar.Collapse id="responsive-navbar-nav">
+              <Nav className="mr-auto">
+                <LinkContainer to="/list">
+                  <Nav.Link>Browse</Nav.Link>
+                </LinkContainer>
+                { isPrivileged() ?  <PrivilegedLinks /> : <></>}
+              </Nav>
+              { this.props.offsite &&
+                <Nav>
+                  <Nav.Link onClick={this.changeServer.bind(this)}>[{this.props.server}]</Nav.Link>
+                </Nav>
+              }
+            </Navbar.Collapse>
           </Navbar>
           <Container>
             <div className="maincontainer">

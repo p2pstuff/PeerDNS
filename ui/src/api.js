@@ -10,6 +10,13 @@ function init() {
     .then((ret) => node_info = ret.data);
 }
 
+function initOffsite(ab) {
+  if (ab.substring(ab.length-1) !== "/") ab = ab + "/";
+  if (ab.substring(ab.length-4) !== "api/") ab = ab + "api/";
+  api_base = ab;
+  return init();
+}
+
 function getNodeInfo() {
   return node_info;
 }
@@ -117,7 +124,8 @@ function pTrustListDel(ip) {
   .then((ret) => ret.data);
 }
 
-export { init, getNodeInfo, getNameList, getZones, isPrivileged,
+export { init, initOffsite,
+    getNodeInfo, getNameList, getZones, isPrivileged,
     pListSources, pGetSource, pGetNeighbors,
     pCheckName, pAddName, pDelName, pAddZone, pDelZone,
     pGetTrustList, pTrustListAdd, pTrustListDel };
