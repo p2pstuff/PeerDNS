@@ -43,7 +43,7 @@ An entry is a list that describes a DNS entry. The following formats are support
 - `[name, "CNAME", redirect_name]`
 - `[name, "MX", priority, server_name]`
 
-*Example value:*
+**Example value:**
 
 ```
 {
@@ -68,9 +68,9 @@ The public API is exposed under the path `/api`.
 
 ### `GET /api` - get node information
 
-*Arguments:* none
+**Arguments:** none
 
-*Returns:* a JSON object of the form:
+**Returns:** a JSON object of the form:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -81,9 +81,10 @@ The public API is exposed under the path `/api`.
 | `privileged` | boolean | Is the client IP allowed to call the privileged API? |
 | `operator` | map of string to string | Operator contact information |
 
-*Example return value:*
+**Example:**
 
 ```
+$ curl localhost:14123/api
 {
   "version": "0.1.0",
   "tld": [
@@ -106,17 +107,18 @@ The public API is exposed under the path `/api`.
 
 ### `GET /api/names/pull` - get the list of names announced by this node
 
-*Arguments:*
+**Arguments:**
 
 - Optionnal GET parameter: `cutoff`, a float. All names announced with a weight
   smaller than the specified value are not returned. Defaults to zero.
 
-*Returns:* a JSON object where keys are zone names and values are name entries (described above)
+**Returns:** a JSON object where keys are zone names and values are name entries (described above)
 
 
-*Example return value:*
+**Example:**
 
 ```
+$ curl localhost:14123/api/names/pull
 {
   "stuff.p2p": {
     "weight": 0.9,
@@ -138,17 +140,17 @@ The public API is exposed under the path `/api`.
 
 ### `POST /api/zones/pull` - pull zone data for specified names
 
-*POST data content-type:* `application/json`
+**POST data content-type:** `application/json`
 
-*Arguments:* The POST data is a JSON object with the following fields:
+**Arguments:** The POST data is a JSON object with the following fields:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | `request` | map of string to string | A map where keys are zone names and values are public keys of the zone we are requesting |
 
-*Return value:* Returns a list of zone entries (described above)
+**Return value:** Returns a list of zone entries (described above)
 
-*Example:*
+**Example:**
 
 ```
 $ curl localhost:14123/api/zones/pull -X POST \
@@ -166,9 +168,9 @@ $ curl localhost:14123/api/zones/pull -X POST \
 
 ### `POST /api/push` - push updates
 
-*POST data content-type:* `application/json`
+**POST data content-type:** `application/json`
 
-*Arguments:* The POST data is a JSON object with the following fields:
+**Arguments:** The POST data is a JSON object with the following fields:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -176,7 +178,7 @@ $ curl localhost:14123/api/zones/pull -X POST \
 | `removed` | list of string | Removed names |
 | `zones` | list of zone data | Zone data for new names or updated versions |
 
-*Return value:* A call result JSON object.
+**Return value:** A call result JSON object.
 
 
 ## Privileged API
@@ -185,32 +187,274 @@ The privileged API is exposed under the path `/api/privileged`.
 
 ### `GET /api/privileged` - get server information
 
-TODO
+**Arguments:** none
+
+**Returns:** a JSON object of the form:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `sources` | map string to source info | The list of sources (name and zone databases) announced by this PeerDNS instance. The keys of this object are the identifiers of the sources. |
+
+A source info map is in the following form:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | Full name of this source |
+| `weight` | float | Multiplicator for the weight of all entries in this source |
+| `editable` | bool | Can the user edit the data? |
+
+**Example:**
+
+```
+{
+  "sources": {
+    "my_modlist": {
+      "weight": 0.8,
+      "name": "My modlist",
+      "editable": true
+    },
+    "my_domains": {
+      "weight": 1,
+      "name": "My domains",
+      "editable": true
+    }
+  }
+}
+```
 
 ### `POST /api/privileged/pull` - start a full pull of data from neighbors
 
-TODO
+**Arguments:** none
+
+**Return value:** A call result JSON object.
+
+**Example:**
+
+```
+$ curl localhost:14123/api/privileged/pull -X POST
+{
+  "result": "success"
+}
+```
 
 ### `GET /api/privileged/neighbors` - list neighbors
 
-TODO
+**Arguments:** none
+
+**Returns:**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `neighbors` | list of peer info | The list of currently known neighbors |
+
+A peer info is an object of the form:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | Peer name |
+| `ip` | string | Peer IP address |
+| `api_port` | integer | Port for API connections |
+| `weight` | float | Trust value, multiplicator applied to all incoming entries from that peer |
+| `status` | string | "up" or "down": were we successfull last time we tried to contact them? |
+| `source` | string | Where do we know this peer from? |
+
+**Example:**
+
+```
+$ curl localhost:14123/api/privileged/neighbors
+{
+  "neighbors": [
+    {
+      "weight": 0.9,
+      "status": "up",
+      "source": "Trust list",
+      "name": "fly11",
+      "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021",
+      "api_port": 14123
+    }
+  ]
+}
+```
 
 ### `GET /api/privileged/check` - check name status
 
-TODO
+**Parameters:** A single GET parameter: `name`, the name whose status we want to check.
+
+**Returns:**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | The queried name |
+| `valid` | boolean | Is the name a valid zone name for a TLD handled by this PeerDNS server? |
+| `taken` | boolean | Are we aware of another user announcing this name? |
+
+**Example:**
+
+```
+$ curl localhost:14123/api/privileged/check?name=peerdns.hype
+{
+  "valid": true,
+  "taken": true,
+  "name": "peerdns.hype"
+}
+```
 
 ### `GET /api/privileged/source/<id>` - list names and zones in source
 
-TODO
+**Parameters:** `<id>` the short identifier of the source we are querying
+
+**Returns:**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `zones` | map string to partial zone data | Our announced DNS zones and all their data |
+| `names` | map string to partial name data | Our announced names |
+
+A zone data entry contains only the version number and the list of DNS
+entries of that zone. A name entry contains only the public key and the
+weight we associate to that name.
+
+**Example:**
+
+```
+$ curl localhost:14123/api/privileged/source/my_domains
+{
+  "zones": {
+    "peerdns.hype": {
+      "version": 4,
+      "entries": [
+        [
+          "peerdns.hype",
+          "AAAA",
+          "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"
+        ]
+      ]
+    }
+  },
+  "names": {
+    "peerdns.hype": {
+      "weight": 1,
+      "pk": "nx_WH3M0Bxp-7v2-neF95Q2dtdvlIa4w3FEWxOiZSM0"
+    }
+  }
+}
+```
 
 ### `POST /api/privileged/source/<id>` - change names and zones in source
 
-TODO
+**POST data content-type:** `application/json`
+
+**Arguments:** `<id>` the short identifier of the source we are modifying. The POST data is a JSON object with the following fields:
+
+| Name | Type | Only for | Description |
+| ---- | ---- | -------- | ----------- |
+| `action` | string | mandatory | `add_name`, `del_name`, `add_zone`, `del_zone` |
+| `name` | string | mandatory | DNS name we want to change |
+| `pk` | string | `add_name` | The public key we want to associate with that name |
+| `weight` | string | `add_name`, `add_zone` | The weight we want to associate with that name |
+| `entries` | list of DNS entries | `add_zone` | The new set of DNS entries for that zone (optionnal, if absent no change is made) |
+
+The `add_name` and `add_zone` operations are also used to edit name and
+zone data: if a previous name or zone exists with the name given as an
+argument, then the previous data is replaced to the data given in the call.
+
+**Return value:** A call result JSON object.
+
+**Examples:**
+
+```
+$ curl localhost:14123/api/privileged/source/my_domains -X POST \
+	-H "Content-Typ: application/json" \
+	-d '{"action": "add_name", "name": "peerdns.hype", "pk": "nx_WH3M0Bxp-7v2-neF95Q2dtdvlIa4w3FEWxOiZSM0", "weight": 1.0}'
+{
+  "result": "success"
+}
+
+$ curl localhost:14123/api/privileged/source/my_domains -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "del_name", "name": "peerdns.hype"}'
+{
+  "result": "success"
+}
+
+$ curl localhost:14123/api/privileged/source/my_domains -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "add_zone", "name": "test.fc00", "weight": 1.0, "entries": [["test.fc00", "A", "1.2.3.4"]]}' 
+{
+  "result": "success"
+}
+
+$ curl localhost:14123/api/privileged/source/my_domains -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "del_zone", "name": "test.fc00"}'
+{
+  "result": "success"
+}
+```
 
 ### `GET /api/privileged/trustlist` - get trust list
 
-TODO
+**Parameters:** none
+
+**Returns:** An object with a single key, `trust_list`, that is a list of:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | The name given to the peer |
+| `ip` | string | IP address to contact the peer |
+| `api_port` | integer | API port to contact the peer |
+| `weight` | float | The trust value given to that peer |
+
+**Example:**
+
+```
+$ curl localhost:14123/api/privileged/trustlist
+{
+  "trust_list": [
+    {
+      "weight": 0.9,
+      "name": "fly11",
+      "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021",
+      "api_port": 14123
+    }
+  ]
+}
+```
 
 ### `POST /api/privileged/trustlist` - alter trust list
 
-TODO
+**POST data content-type:** `application/json`
+
+**Arguments:** The POST data is a JSON object with the following fields:
+
+| Name | Type | Only for | Description |
+| ---- | ---- | -------- | ----------- |
+| `action` | string | mandatory | `add`, `del` |
+| `ip` | string | mandatory | IP address of the peer we want to add or delete |
+| `name` | string | `add` | The name to give to the peer |
+| `api_port` | integer | `add` | API port to contact the peer |
+| `weight` | float | `add` | Weight/trust value given to the peer. MUST BE SMALLER THAN 1! |
+
+The `add` operation is also used to modify a peer: if a peer already exists
+with that IP address, it is modified with the values given as an argument
+to this call.
+
+**Return value:** A call result JSON object.
+
+**Examples:**
+
+```
+$ curl localhost:14123/api/privileged/trustlist -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "add", "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021", "name": "fly11", "weight": 0.9, "api_port": 14123}'
+{
+  "result": "success"
+}
+
+$ curl localhost:14123/api/privileged/trustlist -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "del", "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"}'
+{
+  "result": "success"
+}
+```
