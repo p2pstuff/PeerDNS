@@ -56,9 +56,9 @@ defmodule PeerDNS.DNSServer do
 
   defp get_response(query) do
     domain = to_string(query.domain)
-    [tld, sld | _] = domain
-                     |> String.split(".")
-                     |> Enum.reverse
+    [tld | rld] = domain
+                  |> String.split(".")
+                  |> Enum.reverse
     
     if ".#{tld}" in Application.fetch_env!(:peerdns, :tld) do
       type = case query.type do
@@ -69,6 +69,10 @@ defmodule PeerDNS.DNSServer do
         :mx -> "MX"
       end
 
+      sld = case rld do
+        [sld | _] -> sld
+        _ -> ""
+      end
       zone = "#{sld}.#{tld}"
       case PeerDNS.DB.get_zone(zone) do
         {:ok, zd} ->
@@ -115,8 +119,28 @@ defmodule PeerDNS.DNSServer do
   end
 
   defp resolve_outside(query) do
-    server = Application.fetch_env!(:peerdns, :outside)
-    record = DNS.query(query.domain, query.type, server)
-    record.anlist
+    record = %DNS.Record{
+      header: %DNS.Header{rd: true},
+      qdlist: [query]
+    }
+    servers = Application.fetch_env!(:peerdns, :outside)
+    resolve_outside(record, servers)
+  end
+
+  defp resolve_outside(record, []), do: []
+  defp resolve_outside(record, [{ip, port} | more_servers]) do
+    {:ok, ip} = :inet.parse_address(String.to_charlist ip)
+    {:ok, sock} = :gen_udp.open(0, [:binary])
+    renc = DNS.Record.encode(record)
+    :ok = :gen_udp.send(sock, ip, port, renc)
+    receive do
+      {:udp, ^sock, _, _, data} ->
+        :gen_udp.close sock
+        resp = DNS.Record.decode(data)
+        resp.anlist
+    after 1000 ->
+      :gen_udp.close sock
+      resolve_outside(record, more_servers)
+    end
   end
 end
