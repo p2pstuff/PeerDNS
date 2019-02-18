@@ -11,7 +11,19 @@ defmodule PeerDNS.DNSServer do
     {:ok, listen_dns} = Application.fetch_env(:peerdns, :listen_dns)
     sockets = for {ip, port} <- listen_dns do
       {:ok, addr} = :inet.parse_address(String.to_charlist ip)
-      {:ok, sock} = :gen_udp.open(port, [:binary, ip: addr, active: true])
+      sock = case :gen_udp.open(port, [:binary, ip: addr, active: true]) do
+        {:ok, sock} -> sock
+        {:error, :eaddrinuse} ->
+          Logger.error("Cannot bind #{ip}:#{port}, it is already used by another process.")
+          exit(:error_port_already_in_use)
+        {:error, :eacces} ->
+          Logger.error("Cannot bind #{ip}:#{port}, you are trying to bind a privileged port as an unprivileged user.")
+          Logger.error("There are ways to do that, check the readme and try again.")
+          Logger.error("WARNING: running PeerDNS as root IS NOT the right solution.")
+          exit(:error_privileged_port_unprivileged_user)
+        err ->
+          exit(err)
+      end
       Logger.info("DNS server listening at #{ip}:#{port}")
       sock
     end

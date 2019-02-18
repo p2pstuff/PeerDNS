@@ -63,6 +63,9 @@ defmodule PeerDNS.Sync do
       source_id = ip_source_id(ip, info)
       try do
         added = added
+                |> Enum.filter(fn {name, _} ->
+                  PeerDNS.is_zone_name_valid? name
+                end)
                 |> Enum.map(fn {name, value} ->
                   %{"weight" => w, "pk" => pk} = value
                   true = PeerDNS.is_zone_name_valid?(name)
@@ -73,13 +76,17 @@ defmodule PeerDNS.Sync do
                 |> Enum.filter(fn {_, {_, w}} -> w >= cutoff end)
                 |> Enum.into(%{})
 
-        removed |> Enum.map(fn name -> true = PeerDNS.is_zone_name_valid? name end)
+        removed = Enum.filter(removed, &(PeerDNS.is_zone_name_valid?(&1)))
 
-        zones = zones |> Enum.map(fn z ->
-          %{"pk" => pk, "json" => json, "signature" => signature} = z
-          {:ok, zd} = PeerDNS.ZoneData.deserialize(pk, json, signature)
-          zd
-        end)
+        zones = zones
+                |> Enum.map(fn z ->
+                  %{"pk" => pk, "json" => json, "signature" => signature} = z
+                  case PeerDNS.ZoneData.deserialize(pk, json, signature) do
+                    {:ok, zd} -> zd
+                    _ -> nil
+                  end
+                end)
+                |> Enum.filter(&(&1 != nil))
 
         delta = %Delta{added: added, removed: MapSet.new(removed)}
         PeerDNS.DB.handle_names_delta(source_id, delta)
@@ -212,6 +219,9 @@ defmodule PeerDNS.Sync do
     q_cutoff = cutoff / source_weight
     data = http_get!(args, "/api/names/pull", %{cutoff: to_string q_cutoff})
     data = Poison.decode!(data)
+
+    # Ignore data for TLDs we don't care about
+    data = Map.drop(data, Enum.filter(Map.keys(data), &(not PeerDNS.is_zone_name_valid?(&1))))
 
     sel_previous_names = [{ {:'$1', :_, :'$2', :_, source_id, :_},
                             [ {:>=, :'$2', cutoff} ],
