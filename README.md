@@ -89,7 +89,8 @@ Copy `config/config.exs.sample` to `config/config.exs` and edit to your needs.
 Typically, you will want to add a few trusted peers to exchange data with. A
 few are provided in the sample but you might want to use other ones.
 
-To use the web UI, install `npm` and run the following commands:
+**OPTIONAL** To serve the web UI locally instead of using a hosted version,
+install `npm` and run the following commands:
 
 ```
 cd ui
@@ -97,6 +98,8 @@ npm install
 npm run build
 cd ..
 ```
+
+**END OPTIONAL**
 
 Run PeerDNS:
 
@@ -126,3 +129,4 @@ curl localhost:14123/api/privileged/trustlist -d '{"action":"add","ip":"fc00:123
 curl localhost:14123/api/privileged/trustlist -d '{"action":"del","ip":"fc00:1234::1"}' -v -H "Content-Type: application/json"
 ```
 
+The API documentation is found in `doc/api.md` (not complete yet).

@@ -118,3 +118,5 @@ config :peerdns, pull_policy: [
   [interval: 12*3600, cutoff: 0.05],
 ]
 
+# Server for static UI assets if not present locally
+config :peerdns, offsite_ui: "http://peerdns.p2pstuff.xyz/ui/"
