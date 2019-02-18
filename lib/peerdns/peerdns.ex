@@ -72,6 +72,13 @@ defmodule PeerDNS do
     ip in ips
   end
 
+  def is_ip_valid?(ip) do
+    case :inet.parse_address (String.to_charlist ip) do
+      {:ok, addr} -> true
+      _ -> false
+    end
+  end
+
   def is_ipv6_valid?(ip) do
     case :inet.parse_address (String.to_charlist ip) do
       {:ok, addr} -> tuple_size(addr) == 8

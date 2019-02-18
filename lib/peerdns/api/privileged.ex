@@ -153,7 +153,7 @@ defmodule PeerDNS.API.Privileged do
     result = case conn.params["action"] do
       "add" ->
         cond do
-          not PeerDNS.is_ipv6_valid?(conn.params["ip"]) ->
+          not PeerDNS.is_ip_valid?(conn.params["ip"]) ->
             {:error, :invalid_ip}
           not is_binary(conn.params["name"]) ->
             {:error, :invalid_name}
@@ -167,7 +167,7 @@ defmodule PeerDNS.API.Privileged do
         end
       "del" ->
         cond do
-          not PeerDNS.is_ipv6_valid?(conn.params["ip"]) ->
+          not PeerDNS.is_ip_valid?(conn.params["ip"]) ->
             {:error, :invalid_ip}
           true ->
             PeerDNS.TrustList.remove(conn.params["ip"])

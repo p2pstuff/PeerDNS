@@ -49,21 +49,33 @@ of the user's choice.
 
 ## Installation
 
-Tested on Linux, might work on other OSes as well (please tell me).  Built with
-[Elixir](https://elixir-lang.org/), please install that first.
+Tested on Linux, might work on other OSes as well (please tell me).
 
 PeerDNS runs a DNS server, meaning it needs to bind port 53.  You can run it as
 root but it is highly discouraged!  A better solution is to allow non-root user
 to bind privileged ports, or to use an alternative port and tunnel your port 53
 in some way or another. 
-[This page](https://stackoverflow.com/questions/413807/is-there-a-way-for-non-root-processes-to-bind-to-privileged-ports-on-linux)
-contains some relevant information.
 
-On Linux, this is an easy method to allow all users to bind ports 53 and up:
+### Linux steps
+
+Install [Elixir](https://elixir-lang.org/) and `libsodium`.
+
+[Here](https://stackoverflow.com/questions/413807/is-there-a-way-for-non-root-processes-to-bind-to-privileged-ports-on-linux)
+is a list of ways to bind privileged ports as an unprivilege users.
+
+This is an easy method but a quite bad one:
 
 ```
 sudo sysctl net.ipv4.ip_unprivileged_port_start=53
 ```
+
+### macOS steps
+
+Install [Elixir](https://elixir-lang.org/) and `libsodium`.
+
+(insert here solution for binding port 53 as non-root user)
+
+### Common steps
 
 Clone this repo and download Elixir dependencies:
 
@@ -98,3 +110,19 @@ be queried instead of your network's original DNS server.
 
 PeerDNS also starts an API server at `http://localhost:14123`, which provides a
 user interface to create domains and edit your trust list.
+
+
+## PeerDNS API
+
+There is no CLI utility yet to administrate your PeerDNS instance, however the
+JSON API can be easily called using `curl`. Here are a few examples:
+
+```
+# Get the trust list
+curl localhost:14123/api/privileged/trustlist
+# Add a peer
+curl localhost:14123/api/privileged/trustlist -d '{"action":"add","ip":"fc00:1234::1","name":"Test peer","api_port":14123,"weight":0.5}' -v -H "Content-Type: application/json"
+# Remove a peer
+curl localhost:14123/api/privileged/trustlist -d '{"action":"del","ip":"fc00:1234::1"}' -v -H "Content-Type: application/json"
+```
+
