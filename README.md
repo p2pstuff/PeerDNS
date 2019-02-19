@@ -58,7 +58,9 @@ in some way or another.
 
 ### Linux steps
 
-Install [Elixir](https://elixir-lang.org/) and `libsodium`.
+Install [Elixir](https://elixir-lang.org/) and `libsodium`. If your
+distribution has separate packages for development headers, you might need to
+install `libsodium-dev` as well.
 
 [Here](https://stackoverflow.com/questions/413807/is-there-a-way-for-non-root-processes-to-bind-to-privileged-ports-on-linux)
 is a list of ways to bind privileged ports as an unprivilege users.
@@ -71,7 +73,9 @@ sudo sysctl net.ipv4.ip_unprivileged_port_start=53
 
 ### macOS steps
 
-Install [Elixir](https://elixir-lang.org/) and `libsodium`.
+Install [Elixir](https://elixir-lang.org/) and `libsodium`. If your package
+manager has separate packages for development headers, you might need to
+install `libsodium-dev` as well.
 
 (insert here solution for binding port 53 as non-root user)
 
@@ -118,7 +122,8 @@ user interface to create domains and edit your trust list.
 ## PeerDNS API
 
 There is no CLI utility yet to administrate your PeerDNS instance, however the
-JSON API can be easily called using `curl`. Here are a few examples:
+JSON API can be easily called from the command line using `curl`. Here are a
+few examples:
 
 ```
 # Get the trust list
@@ -129,4 +134,4 @@ curl localhost:14123/api/privileged/trustlist -d '{"action":"add","ip":"fc00:123
 curl localhost:14123/api/privileged/trustlist -d '{"action":"del","ip":"fc00:1234::1"}' -v -H "Content-Type: application/json"
 ```
 
-The API documentation is found in `doc/api.md` (not complete yet).
+The API documentation is found in `doc/api.md`.

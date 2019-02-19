@@ -12,6 +12,7 @@ config :logger, level: :info
 # Some trusted peer IPs
 # Replace with your own here and update reference below
 peer_fly11 = "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"
+# peer_fly11 = "37.187.118.206"   # use this if you are not on CJDNS
 
 # The contact info of the operator of this PeerDNS instance
 config :peerdns, operator: %{
