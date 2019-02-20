@@ -127,7 +127,7 @@ defmodule PeerDNS.DNSServer do
     resolve_outside(record, servers)
   end
 
-  defp resolve_outside(record, []), do: []
+  defp resolve_outside(_record, []), do: []
   defp resolve_outside(record, [{ip, port} | more_servers]) do
     {:ok, ip} = :inet.parse_address(String.to_charlist ip)
     {:ok, sock} = :gen_udp.open(0, [:binary])

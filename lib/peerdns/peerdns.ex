@@ -74,7 +74,7 @@ defmodule PeerDNS do
 
   def is_ip_valid?(ip) do
     case :inet.parse_address (String.to_charlist ip) do
-      {:ok, addr} -> true
+      {:ok, _addr} -> true
       _ -> false
     end
   end
