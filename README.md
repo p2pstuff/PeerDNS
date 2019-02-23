@@ -94,7 +94,17 @@ Typically, you will want to add a few trusted peers to exchange data with. A
 few are provided in the sample but you might want to use other ones.
 
 **OPTIONAL** To serve the web UI locally instead of using a hosted version,
-install `npm` and run the following commands:
+you can download precompiled files to the `ui` directory:
+
+```
+cd ui
+wget http://peerdns.p2pstuff.xyz/peerdns-ui-build.tgz
+tar xzvf peerdns-ui-build.tgz
+cd ..
+```
+
+If you prefer to compile the UI yourself, install `npm` and run the following
+commands:
 
 ```
 cd ui
