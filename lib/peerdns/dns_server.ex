@@ -55,7 +55,8 @@ defmodule PeerDNS.DNSServer do
     {:ok, listen_dns} = Application.fetch_env(:peerdns, :listen_dns)
     sockets = for {ip, port} <- listen_dns do
       {:ok, addr} = :inet.parse_address(String.to_charlist ip)
-      sock = case :gen_udp.open(port, [:binary, ip: addr, active: true]) do
+      inet = if tuple_size(addr) == 8 do [:inet6] else [:inet] end
+      sock = case :gen_udp.open(port, [:binary, ip: addr, active: true] ++ inet) do
         {:ok, sock} -> sock
         {:error, :eaddrinuse} ->
           Logger.error("Cannot bind #{ip}:#{port}, it is already used by another process.")
@@ -175,7 +176,8 @@ defmodule PeerDNS.DNSServer do
 
   defp resolve_outside(record, [{ip, port} | more_servers]) do
     {:ok, ip} = :inet.parse_address(String.to_charlist ip)
-    {:ok, sock} = :gen_udp.open(0, [:binary])
+    inet = if tuple_size(ip) == 8 do [:inet6] else [:inet] end
+    {:ok, sock} = :gen_udp.open(0, [:binary] ++ inet)
     renc = DNS.Record.encode(record)
     :gen_udp.send(sock, ip, port, renc)
     receive do
