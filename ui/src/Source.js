@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Table, Alert, Form, Modal, Button } from 'react-bootstrap';
 
 import { pCheckName, pGetSource, pAddName, pDelName, pAddZone } from './api';
+import punycode from 'punycode';
 
 import ZoneEditor from './ZoneEditor';
 
@@ -64,7 +65,7 @@ class Source extends Component {
             <h3>Names</h3>
             <p>In this section, you can endorse names that you don't own, in the case of a conflict
               between two conflicting attributions of that name. To endorse a name, you must know
-              the public key of the user you want to favour. You can also select
+              the public key of the DNS zone you want to favour. You can also select
               a trust value (weight) to attribute to that endorsement.</p>
             {Object.keys(names).filter((k) => zones[k] === undefined).length === 0
                 ? <p>No names defined.</p> :
@@ -100,7 +101,9 @@ function NameListItem(props) {
   return (
     <tr>
       <td>
-        {props.name}
+        {punycode.toUnicode(props.name)}
+        {props.name !== punycode.toUnicode(props.name) &&
+            <><br /><small>{props.name}</small></>}
       </td>
       <td>{props.item.weight}</td>
       <td>{props.item.pk}</td>
@@ -129,7 +132,7 @@ class NameForm extends Component {
     this.state = {
       show: false,
       err: null,
-      name: props.name || "",
+      name: punycode.toUnicode(props.name || ""),
       pk: props.pk || "",
       weight: props.weight || "1.0",
     };
@@ -139,7 +142,8 @@ class NameForm extends Component {
     if (retval) {
       var that = this;
       pAddName(this.props.sourceId, 
-        this.state.name, this.state.pk, parseFloat(this.state.weight))
+        punycode.toASCII(this.state.name),
+        this.state.pk, parseFloat(this.state.weight))
       .then(function(json) {
         if (json.result === "success") {
           that.setState({
@@ -237,7 +241,9 @@ class ZoneAddForm extends Component {
   handleClose(retval) {
     if (retval) {
       var that = this;
-      pAddZone(this.props.sourceId, this.state.name, null, 1.0)
+      pAddZone(this.props.sourceId,
+        punycode.toASCII(this.state.name),
+        null, 1.0)
       .then(function(json) {
         if (json.result === "success") {
           that.setState({
@@ -268,12 +274,14 @@ class ZoneAddForm extends Component {
     });
 
     var that = this;
-    pCheckName(value)
-    .then(function (json) {
-      if (json.name === that.state.name) {
-        that.setState({nameTaken: json.taken, nameValid: json.valid});
-      }
-    });
+    if (name === "name") {
+      pCheckName(punycode.toASCII(value))
+      .then(function (json) {
+        if (json.name === punycode.toASCII(that.state.name)) {
+          that.setState({nameTaken: json.taken, nameValid: json.valid});
+        }
+      });
+    }
   }
 
   render() {

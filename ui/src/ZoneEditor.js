@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Table, Card, Alert, Form, Modal, Button } from 'react-bootstrap';
+import punycode from 'punycode';
 
 import Confirm from './Confirm';
 
@@ -41,9 +42,11 @@ class ZoneEditor extends Component {
   change(replaces, new_st) {
     var new_entry = null;
     if (new_st.type === "MX") {
-      new_entry = [new_st.name, "MX", parseInt(new_st.priority), new_st.value];
+      new_entry = [punycode.toASCII(new_st.name),
+                    "MX", parseInt(new_st.priority), new_st.value];
     } else {
-      new_entry = [new_st.name, new_st.type, new_st.value];
+      new_entry = [punycode.toASCII(new_st.name),
+                    new_st.type, new_st.value];
     }
 
     var found = false;
@@ -69,7 +72,9 @@ class ZoneEditor extends Component {
     return (
       <>
         <Card>
-          <Card.Header as="h5">{this.props.name}</Card.Header>
+          <Card.Header as="h5">
+            {punycode.toUnicode(this.props.name)}
+          </Card.Header>
           <Card.Body>
             {this.state.error &&
                 <Alert variant="danger">{this.state.error}</Alert>}
@@ -86,6 +91,10 @@ class ZoneEditor extends Component {
                 actionText="Delete zone"
                 onConfirm={this.deleteZone.bind(this)} />
             </div>
+            {this.props.name !== punycode.toUnicode(this.props.name)
+              && <Card.Text>
+                    <strong>Encoded as:</strong> {this.props.name}
+                </Card.Text>}
             <Card.Text>
               <strong>Public key:</strong> {this.props.nentry.pk}
             </Card.Text>
@@ -127,7 +136,9 @@ function ZoneEntry(props) {
   return (
     <tr>
       <td>
-        {name}
+        {punycode.toUnicode(name)}
+        {name !== punycode.toUnicode(name) &&
+            <><br /><small>{name}</small></>}
       </td>
       <td>{type}</td>
       <td>{props.item.slice(2).join(" ")}</td>
@@ -155,7 +166,7 @@ class ZoneEntryForm extends Component {
     this.state = {
       show: false,
       err: null,
-      name: props.name || "",
+      name: punycode.toUnicode(props.name || ""),
       type: props.type || "AAAA",
       priority: props.priority || "5",
       value: props.value || "",

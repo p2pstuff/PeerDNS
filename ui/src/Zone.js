@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Table } from 'react-bootstrap';
+import punycode from 'punycode';
 
 import { getZones } from './api';
 
@@ -30,7 +31,10 @@ class Zone extends Component {
       var data = JSON.parse(this.state.data.json);
       return (
         <>
-          <h1>Zone {data.name}</h1>
+          <h1>Zone {punycode.toUnicode(data.name)}</h1>
+          {data.name !== punycode.toUnicode(data.name) &&
+            <p><strong>Encoded as:</strong> {data.name}</p>
+          }
           <p><strong>Public key:</strong> {pk}</p>
           <p><strong>Version:</strong> {data.version}</p>
           <Table striped bordered hover>
@@ -54,10 +58,13 @@ class Zone extends Component {
 }
 
 function ListItem(props) {
+  var name = props.item[0];
   return (
     <tr>
       <td>
-        {props.item[0]}
+        {punycode.toUnicode(name)}
+        {name !== punycode.toUnicode(name) &&
+            <><br /><small>{name}</small></>}
       </td>
       <td>{props.item[1]}</td>
       <td>{props.item.slice(2).join(" ")}</td>

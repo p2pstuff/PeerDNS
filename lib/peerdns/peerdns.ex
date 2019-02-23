@@ -1,7 +1,7 @@
 defmodule PeerDNS do
-  @tld_format ~r/^\.[\d\w]+$/iu
-  @zone_name_format ~r/^[\d\w_-]+\.[\d\w]+$/iu
-  @full_name_format ~r/^([\d\w_-]+\.)+[\d\w]+$/iu
+  @tld_format ~r/^\.[\d\w]+$/i
+  @zone_name_format ~r/^[\d\w_-]+\.[\d\w]+$/i
+  @full_name_format ~r/^([\d\w_-]+\.)+[\d\w]+$/i
 
   def is_tld_valid?(tld) do
     Regex.match?(@tld_format, tld)

@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import punycode from 'punycode';
 
 import { getNameList } from './api';
+
 
 class List extends Component {
   constructor() {
@@ -43,7 +45,7 @@ function ListItem(props) {
     <tr>
       <td>
         <Link to={"/zone/" + props.name + "/" + props.item.pk}>
-          {props.name}
+          {punycode.toUnicode(props.name)}
         </Link>
       </td>
       <td>{props.item.weight}</td>
