@@ -11,9 +11,9 @@ import List from './List';
 import Zone from './Zone';
 import Source from './Source';
 import Neighbors from './Neighbors';
-import TrustList from './TrustList';
+import PeerList from './PeerList';
 
-import { isPrivileged, pListSources } from './api';
+import { isPrivileged, pListPrivileged } from './api';
 
 class App extends Component {
   changeServer() {
@@ -48,7 +48,9 @@ class App extends Component {
                 <Route exact path="/" component={Home} />
                 <Route exact path="/list" component={List} />
                 <Route exact path="/neighbors" component={Neighbors} />
-                <Route exact path="/trustlist" component={TrustList} />
+                <Route exact path="/peer_list/:id" render={(props) => (
+                    <PeerList key={props.match.params.id} {...props} />
+                  )} />
                 <Route path="/zone/:name/:pk" render={(props) => (
                     <Zone key={props.match.params.pk} {...props} />
                   )} />
@@ -71,7 +73,7 @@ class PrivilegedLinks extends Component {
   }
 
   componentDidMount() {
-    pListSources()
+    pListPrivileged()
     .then(json => this.setState({ data: json }));
   }
 
@@ -82,6 +84,7 @@ class PrivilegedLinks extends Component {
       );
     } else {
       var sources = this.state.data.sources;
+      var peer_lists = this.state.data.peer_lists;
       return (
         <>
           <LinkContainer to={"/neighbors"}>
@@ -92,9 +95,11 @@ class PrivilegedLinks extends Component {
               <Nav.Link>{sources[k].name}</Nav.Link>
             </LinkContainer>
           ))}
-          <LinkContainer to={"/trustlist"}>
-            <Nav.Link>Trust list</Nav.Link>
-          </LinkContainer>
+          {Object.keys(peer_lists).map((k) => (
+            <LinkContainer key={k} to={"/peer_list/" + k}>
+              <Nav.Link>{peer_lists[k].name}</Nav.Link>
+            </LinkContainer>
+          ))}
         </>
       );
     }

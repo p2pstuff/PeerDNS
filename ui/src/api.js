@@ -37,7 +37,7 @@ function isPrivileged() {
   return node_info.privileged;
 }
 
-function pListSources() {
+function pListPrivileged() {
   return axios.get(api_base + "/privileged")
     .then((ret) => ret.data);
 }
@@ -98,13 +98,13 @@ function pDelZone(source_id, name) {
   .then((ret) => ret.data);
 }
 
-function pGetTrustList() {
-  return axios.get(api_base + "/privileged/trustlist")
+function pGetPeerList(list_id) {
+  return axios.get(api_base + "/privileged/peer_list/" + list_id)
     .then((ret) => ret.data);
 }
 
-function pTrustListAdd(name, ip, api_port, weight) {
-  return axios.post(api_base + "/privileged/trustlist",
+function pPeerListAdd(list_id, name, ip, api_port, weight) {
+  return axios.post(api_base + "/privileged/peer_list/" + list_id,
       {
         "action": "add",
         "name": name,
@@ -115,8 +115,8 @@ function pTrustListAdd(name, ip, api_port, weight) {
   .then((ret) => ret.data);
 }
 
-function pTrustListDel(ip) {
-  return axios.post(api_base + "/privileged/trustlist",
+function pPeerListDel(list_id, ip) {
+  return axios.post(api_base + "/privileged/peer_list/" + list_id,
       {
         "action": "del",
         "ip": ip,
@@ -126,8 +126,8 @@ function pTrustListDel(ip) {
 
 export { init, initOffsite,
     getNodeInfo, getNameList, getZones, isPrivileged,
-    pListSources, pGetSource, pGetNeighbors,
+    pListPrivileged, pGetSource, pGetNeighbors,
     pCheckName, pAddName, pDelName, pAddZone, pDelZone,
-    pGetTrustList, pTrustListAdd, pTrustListDel };
+    pGetPeerList, pPeerListAdd, pPeerListDel };
 
 // vim: set sts=2 ts=2 sw=2 tw=0 et :

@@ -9,6 +9,11 @@ defmodule PeerDNS.Application do
       Supervisor.child_spec({PeerDNS.Source, src_args}, id: src_args[:id])
     end
 
+    peer_list_desc = Application.fetch_env!(:peerdns, :peer_lists)
+    peer_lists = for pl_args <- peer_list_desc do
+      Supervisor.child_spec({PeerDNS.PeerList, pl_args}, id: pl_args[:id])
+    end
+
     api_listen = Application.fetch_env!(:peerdns, :listen_api)
     api_processes = for {{ip, port}, i} <- Enum.with_index(api_listen) do
       id = String.to_atom "api#{i}"
@@ -22,10 +27,9 @@ defmodule PeerDNS.Application do
     children = api_processes ++ [
       PeerDNS.DB,
       PeerDNS.Sync,
-      PeerDNS.TrustList,
       PeerDNS.CJDNS,
       PeerDNS.DNSServer,
-    ] ++ sources
+    ] ++ peer_lists ++ sources
 
     opts = [strategy: :rest_for_one, name: PeerDNS.Supervisor]
     Supervisor.start_link(children, opts)

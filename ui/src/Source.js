@@ -17,7 +17,7 @@ class Source extends Component {
 
   componentDidMount() {
     pGetSource(this.id)
-    .then(json => this.setState({ data: json }));
+    .then(json => this.setState({ name: json.name, description: json.description, data: json }));
   }
 
   reload() {
@@ -46,6 +46,8 @@ class Source extends Component {
         var zones = this.state.data.zones;
         return (
           <>
+            <h1>{this.state.name}</h1>
+            <p>{this.state.description}</p>
             {this.state.error &&
                 <Alert variant="danger">{this.state.error}</Alert>}
             <h3>Zones</h3>

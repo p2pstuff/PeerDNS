@@ -7,12 +7,8 @@ defmodule PeerDNS.Source do
 
   def start_link(args) do
     id = args[:id]
-    if id != nil do
-      Logger.info("Starting source #{args[:name]} as #{inspect id}")
-      GenServer.start_link(__MODULE__, args, name: id)
-    else
-      GenServer.start_link(__MODULE__, args)
-    end
+    Logger.info("Starting source #{args[:name]} as #{inspect id}")
+    GenServer.start_link(__MODULE__, args, name: id)
   end
 
   def get_all(source) do

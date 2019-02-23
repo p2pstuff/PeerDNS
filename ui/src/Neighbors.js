@@ -1,17 +1,20 @@
 import React, { Component } from 'react';
 import { Table } from 'react-bootstrap';
 
-import { pGetNeighbors } from './api';
+import { pListPrivileged, pGetNeighbors } from './api';
 
 class Neighbors extends Component {
   constructor() {
     super();
-    this.state = { data: [] };
+    this.state = { lists: null, data: [] };
   }
 
   componentDidMount() {
-    pGetNeighbors()
-    .then(json => this.setState({ data: json.neighbors }));
+    pListPrivileged()
+    .then(pjson =>
+      pGetNeighbors()
+      .then(json => this.setState({ lists: pjson.peer_lists, data: json.neighbors }))
+    );
   }
 
   render() {
@@ -29,7 +32,7 @@ class Neighbors extends Component {
         </thead>
         <tbody>
           {this.state.data.map((k)=>
-              <ListItem key={k.ip} item={k} />
+              <ListItem key={k.ip} item={k} lists={this.state.lists} />
           )}
         </tbody>
       </Table>
@@ -44,7 +47,9 @@ function ListItem(props) {
       <td>{props.item.weight}</td>
       <td>{props.item.ip}</td>
 	    <td>{props.item.api_port} </td>
-      <td>{props.item.source}</td>
+      <td>{props.lists[props.item.source] ?
+            props.lists[props.item.source].name :
+            props.item.source}</td>
       <td>{props.item.status}</td>
     </tr>
   );

@@ -194,14 +194,25 @@ The privileged API is exposed under the path `/api/privileged`.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | `sources` | map string to source info | The list of sources (name and zone databases) announced by this PeerDNS instance. The keys of this object are the identifiers of the sources. |
+| `peer_lists` | map string to peer list info | The list of peer lists used by this server. |
 
 A source info map is in the following form:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | `name` | string | Full name of this source |
+| `description` | string | Description of the source, as defined in the config file |
 | `weight` | float | Multiplicator for the weight of all entries in this source |
 | `editable` | bool | Can the user edit the data? |
+
+A peer list info map is in the following form:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | Full name of this peer list |
+| `description` | string | Description of the peer list, as defined in the config file |
+| `editable` | bool | Can the user edit the data? |
+| `temporary` | bool | If true, all peers in the list are deleted when PeerDNS restarts, otherwise they are saved |
 
 **Example:**
 
@@ -211,12 +222,28 @@ A source info map is in the following form:
     "my_modlist": {
       "weight": 0.8,
       "name": "My modlist",
-      "editable": true
+      "editable": true,
+      "description": "Use this list to propagate or block domains of other users."
     },
     "my_domains": {
       "weight": 1,
       "name": "My domains",
-      "editable": true
+      "editable": true,
+      "description": "Use this list to enter domains you own."
+    }
+  },
+  "peer_lists": {
+    "trust_list": {
+      "temporary": false,
+      "name": "Trust list",
+      "editable": true,
+      "description": "Use this list to enter peers you trust personnally. This list is saved to disk at each change and will be reloaded when PeerDNS restarts."
+    },
+    "temporary_peers": {
+      "temporary": true,
+      "name": "Temporary peers",
+      "editable": true,
+      "description": "Use this list to add temporary peers. This list will be cleared whenever PeerDNS restarts."
     }
   }
 }
@@ -256,7 +283,7 @@ A peer info is an object of the form:
 | `api_port` | integer | Port for API connections |
 | `weight` | float | Trust value, multiplicator applied to all incoming entries from that peer |
 | `status` | string | "up" or "down": were we successfull last time we tried to contact them? |
-| `source` | string | Where do we know this peer from? |
+| `source` | string | Where do we know this peer from? ID of a peer list or `CJDNS` |
 
 **Example:**
 
@@ -307,6 +334,8 @@ $ curl localhost:14123/api/privileged/check?name=peerdns.hype
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| `name` | string | Name of the source |
+| `description` | string | Description of the source, as defined in the config file |
 | `zones` | map string to partial zone data | Our announced DNS zones and all their data |
 | `names` | map string to partial name data | Our announced names |
 
@@ -319,6 +348,8 @@ weight we associate to that name.
 ```
 $ curl localhost:14123/api/privileged/source/my_domains
 {
+  "name": "My domains",
+  "description": "Use this list to enter domains you own.",
   "zones": {
     "peerdns.hype": {
       "version": 4,
@@ -392,11 +423,19 @@ $ curl localhost:14123/api/privileged/source/my_domains -X POST \
 }
 ```
 
-### `GET /api/privileged/trustlist` - get trust list
+### `GET /api/privileged/peer_list/<id>` - get peer list list
 
-**Parameters:** none
+**Parameters:** `<id>` the short identifier of the peer list we are querying
 
-**Returns:** An object with a single key, `trust_list`, that is a list of:
+**Returns:** An object with the following fields:
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| `name` | string | The name of the peer list |
+| `description` | string | The description of the peer list |
+| `peer_list` | type of peer list entry | List of peers |
+
+A peer list entry is of the form:
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -408,9 +447,11 @@ $ curl localhost:14123/api/privileged/source/my_domains -X POST \
 **Example:**
 
 ```
-$ curl localhost:14123/api/privileged/trustlist
+$ curl localhost:14123/api/privileged/peer_list/trust_list
 {
-  "trust_list": [
+  "name": "Trust list",
+  "description": "Use this list to enter peers you trust personnally. This list is saved to disk at each change and will be reloaded when PeerDNS restarts.",
+  "peer_list": [
     {
       "weight": 0.9,
       "name": "fly11",
@@ -421,16 +462,16 @@ $ curl localhost:14123/api/privileged/trustlist
 }
 ```
 
-### `POST /api/privileged/trustlist` - alter trust list
+### `POST /api/privileged/peer_list/<id>` - alter peer list list
 
 **POST data content-type:** `application/json`
 
-**Arguments:** The POST data is a JSON object with the following fields:
+**Arguments:** `<id>` the short identifier of the peer list we are modifying. The POST data is a JSON object with the following fields:
 
 | Name | Type | Only for | Description |
 | ---- | ---- | -------- | ----------- |
-| `action` | string | mandatory | `add`, `del` |
-| `ip` | string | mandatory | IP address of the peer we want to add or delete |
+| `action` | string | mandatory | `add`, `del` or `clear_all` |
+| `ip` | string | `add`, `del` | IP address of the peer we want to add or delete |
 | `name` | string | `add` | The name to give to the peer |
 | `api_port` | integer | `add` | API port to contact the peer |
 | `weight` | float | `add` | Weight/trust value given to the peer. MUST BE SMALLER THAN 1! |
@@ -444,16 +485,23 @@ to this call.
 **Examples:**
 
 ```
-$ curl localhost:14123/api/privileged/trustlist -X POST \
+$ curl localhost:14123/api/privileged/peer_list/trust_list -X POST \
 	-H "Content-Type: application/json" \
 	-d '{"action": "add", "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021", "name": "fly11", "weight": 0.9, "api_port": 14123}'
 {
   "result": "success"
 }
 
-$ curl localhost:14123/api/privileged/trustlist -X POST \
+$ curl localhost:14123/api/privileged/peer_list/trust_list -X POST \
 	-H "Content-Type: application/json" \
 	-d '{"action": "del", "ip": "fc18:e736:105d:d49a:2ab5:14a2:698f:7021"}'
+{
+  "result": "success"
+}
+
+$ curl localhost:14123/api/privileged/peer_list/temporary_peers -X POST \
+	-H "Content-Type: application/json" \
+	-d '{"action": "clear_all"}'
 {
   "result": "success"
 }

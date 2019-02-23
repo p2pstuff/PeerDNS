@@ -2,11 +2,11 @@
 import React, { Component } from 'react';
 import { Table, Alert, Form, Modal, Button } from 'react-bootstrap';
 
-import { pGetTrustList, pTrustListAdd, pTrustListDel } from './api';
+import { pGetPeerList, pPeerListAdd, pPeerListDel } from './api';
 
 import Confirm from './Confirm';
 
-class TrustList extends Component {
+class PeerList extends Component {
   constructor(args) {
     super();
 	  this.id = args.match.params.id;
@@ -14,8 +14,8 @@ class TrustList extends Component {
   }
 
   componentDidMount() {
-    pGetTrustList(this.id)
-    .then(json => this.setState({ data: json.trust_list }));
+    pGetPeerList(this.id)
+    .then(json => this.setState({ name: json.name, description: json.description, data: json.peer_list }));
   }
 
   reload() {
@@ -24,7 +24,7 @@ class TrustList extends Component {
   
   deleteEntry(ip) {
     var that = this;
-    pTrustListDel(ip)
+    pPeerListDel(this.id, ip)
     .then(function (json) {
       if (json.result ==="success") {
         that.reload();
@@ -42,9 +42,10 @@ class TrustList extends Component {
     } else {
         return (
           <>
+            <h1>{this.state.name}</h1>
+            <p>{this.state.description}</p>
             {this.state.error &&
                 <Alert variant="danger">{this.state.error}</Alert>}
-            <h1>Trust list</h1>
             {this.state.data.length === 0
                 ? <p>No entries.</p> :
               <Table striped bordered hover>
@@ -59,14 +60,16 @@ class TrustList extends Component {
                 </thead>
                 <tbody>
                   {this.state.data.map((item) =>
-                      <TrustListItem key={item.ip} item={item}
+                      <PeerListItem key={item.ip} item={item}
+                        peer_list={this.id}
                         onChange={this.reload.bind(this)}
                         onDelete={this.deleteEntry.bind(this, item.ip)} />
                   )}
                 </tbody>
               </Table>
             }
-            <TrustEntryForm
+            <PeerEntryForm
+                peer_list={this.id}
                 variant="success" title="Add trust list entry" actionText="Add"
                 onDone={this.reload.bind(this)} />
           </>
@@ -75,7 +78,7 @@ class TrustList extends Component {
   }
 }
 
-function TrustListItem(props) {
+function PeerListItem(props) {
   return (
     <tr>
       <td>{props.item.name}</td>
@@ -83,7 +86,8 @@ function TrustListItem(props) {
       <td>{props.item.api_port}</td>
       <td>{props.item.weight}</td>
       <td>
-        <TrustEntryForm ipRO={true} 
+        <PeerEntryForm ipRO={true} 
+          peer_list={props.peer_list}
           ip={props.item.ip} name={props.item.name}
           weight={props.item.weight} api_port={props.item.api_port}
           title="Edit entry"
@@ -101,7 +105,7 @@ function TrustListItem(props) {
   );
 }
 
-class TrustEntryForm extends Component {
+class PeerEntryForm extends Component {
   constructor(props, context) {
     super(props, context);
 
@@ -118,7 +122,8 @@ class TrustEntryForm extends Component {
   handleClose(retval) {
     if (retval) {
       var that = this;
-      pTrustListAdd(this.state.name, this.state.ip,
+      pPeerListAdd(this.props.peer_list,
+        this.state.name, this.state.ip,
         parseInt(this.state.api_port), parseFloat(this.state.weight))
       .then(function(json) {
         if (json.result === "success") {
@@ -210,6 +215,6 @@ class TrustEntryForm extends Component {
 }
 
 
-export default TrustList;
+export default PeerList;
 
 // vim: set sts=2 ts=2 sw=2 tw=0 et :

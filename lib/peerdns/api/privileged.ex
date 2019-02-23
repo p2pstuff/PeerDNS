@@ -32,12 +32,23 @@ defmodule PeerDNS.API.Privileged do
       {Atom.to_string(src[:id]),
         %{
           "name" => src[:name],
+          "description" => src[:description],
           "editable" => src[:editable] || false,
           "weight" => src[:weight],
         }
       }
     end
-    response = %{ "sources" => sources }
+    peer_lists = for pl <- Application.fetch_env!(:peerdns, :peer_lists), into: %{} do
+      {Atom.to_string(pl[:id]),
+        %{
+          "name" => pl[:name],
+          "description" => pl[:description],
+          "editable" => pl[:editable] || false,
+          "temporary" => (pl[:file] == nil),
+        }
+      }
+    end
+    response = %{ "sources" => sources, "peer_lists" => peer_lists }
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response, pretty: true))
@@ -84,9 +95,12 @@ defmodule PeerDNS.API.Privileged do
   end
 
   get "/source/:id" do
-    id = check_source(id)
+    src = check_source(id)
+    id = src[:id]
     {:ok, %{names: names, zones: zones}} = PeerDNS.Source.get_all(id)
     response = %{
+      "name" => src[:name],
+      "description" => src[:description],
       "names" => names
             |> Enum.map(fn {k, {pk, weight}} -> {k, %{"pk" => pk, "weight" => weight}} end)
             |> Enum.into(%{}),
@@ -100,7 +114,8 @@ defmodule PeerDNS.API.Privileged do
   end
 
   post "/source/:id" do
-    id = check_source(id)
+    src = check_source(id)
+    id = src[:id]
     result = case conn.params["action"] do
       "add_name" ->
         cond do
@@ -147,14 +162,21 @@ defmodule PeerDNS.API.Privileged do
     api_action_result(conn, result)
   end
 
-  get "/trustlist" do
-    response = %{ "trust_list" => PeerDNS.TrustList.get }
+  get "/peer_list/:id" do
+    pl = check_peer_list(id)
+    id = pl[:id]
+    response = %{
+      "name" => pl[:name],
+      "description" => pl[:description],
+      "peer_list" => PeerDNS.PeerList.get_all(id) }
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response, pretty: true))
   end
 
-  post "/trustlist" do
+  post "/peer_list/:id" do
+    pl = check_peer_list(id)
+    id = pl[:id]
     result = case conn.params["action"] do
       "add" ->
         cond do
@@ -167,7 +189,7 @@ defmodule PeerDNS.API.Privileged do
           not is_integer(conn.params["api_port"]) ->
             {:error, :invalid_api_port}
           true ->
-            PeerDNS.TrustList.add(conn.params["name"], conn.params["ip"],
+            PeerDNS.PeerList.add(id, conn.params["name"], conn.params["ip"],
               conn.params["api_port"], conn.params["weight"])
         end
       "del" ->
@@ -175,8 +197,11 @@ defmodule PeerDNS.API.Privileged do
           not PeerDNS.is_ip_valid?(conn.params["ip"]) ->
             {:error, :invalid_ip}
           true ->
-            PeerDNS.TrustList.remove(conn.params["ip"])
+            PeerDNS.PeerList.remove(id, conn.params["ip"])
         end
+      "clear_all" ->
+        PeerDNS.PeerList.clear_all(id)
+      _ -> {:error, :invalid_action}
     end
     api_action_result(conn, result)
   end
@@ -184,7 +209,13 @@ defmodule PeerDNS.API.Privileged do
   defp check_source(id) do
     [s1] = Application.fetch_env!(:peerdns, :sources)
            |> Enum.filter(&(Atom.to_string(&1[:id]) == id))
-    s1[:id]
+    s1
+  end
+
+  defp check_peer_list(id) do
+    [s1] = Application.fetch_env!(:peerdns, :peer_lists)
+           |> Enum.filter(&(Atom.to_string(&1[:id]) == id))
+    s1
   end
 
   defp api_action_result(conn, result) do
