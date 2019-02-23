@@ -137,11 +137,11 @@ few examples:
 
 ```
 # Get the trust list
-curl localhost:14123/api/privileged/trustlist
+curl localhost:14123/api/privileged/peer_list/trust_list
 # Add a peer
-curl localhost:14123/api/privileged/trustlist -d '{"action":"add","ip":"fc00:1234::1","name":"Test peer","api_port":14123,"weight":0.5}' -v -H "Content-Type: application/json"
+curl localhost:14123/api/privileged/peer_list/trust_list -d '{"action":"add","ip":"fc00:1234::1","name":"Test peer","api_port":14123,"weight":0.5}' -v -H "Content-Type: application/json"
 # Remove a peer
-curl localhost:14123/api/privileged/trustlist -d '{"action":"del","ip":"fc00:1234::1"}' -v -H "Content-Type: application/json"
+curl localhost:14123/api/privileged/peer_list/trust_list -d '{"action":"del","ip":"fc00:1234::1"}' -v -H "Content-Type: application/json"
 ```
 
 The API documentation is found in `doc/api.md`.
