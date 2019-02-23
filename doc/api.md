@@ -423,7 +423,7 @@ $ curl localhost:14123/api/privileged/source/my_domains -X POST \
 }
 ```
 
-### `GET /api/privileged/peer_list/<id>` - get peer list list
+### `GET /api/privileged/peer_list/<id>` - get peer list
 
 **Parameters:** `<id>` the short identifier of the peer list we are querying
 
@@ -433,7 +433,7 @@ $ curl localhost:14123/api/privileged/source/my_domains -X POST \
 | ---- | ---- | ----------- |
 | `name` | string | The name of the peer list |
 | `description` | string | The description of the peer list |
-| `peer_list` | type of peer list entry | List of peers |
+| `peer_list` | list of peer list entry | List of peers |
 
 A peer list entry is of the form:
 
@@ -462,7 +462,7 @@ $ curl localhost:14123/api/privileged/peer_list/trust_list
 }
 ```
 
-### `POST /api/privileged/peer_list/<id>` - alter peer list list
+### `POST /api/privileged/peer_list/<id>` - alter peer list
 
 **POST data content-type:** `application/json`
 
