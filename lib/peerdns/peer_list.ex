@@ -96,7 +96,7 @@ defmodule PeerDNS.PeerList do
     end
   end
 
-  def handle_call(clear_all, _from, state) do
+  def handle_call(:clear_all, _from, state) do
     if state.editable do
       state = %{state | data: %{}}
       send_update(state)
