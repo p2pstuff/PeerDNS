@@ -145,3 +145,11 @@ curl localhost:14123/api/privileged/peer_list/trust_list -d '{"action":"del","ip
 ```
 
 The API documentation is found in `doc/api.md`.
+
+
+## Docker notes (WIP)
+
+```
+docker build . -t peerdns
+docker run --network host -it peerdns /bin/bash
+```

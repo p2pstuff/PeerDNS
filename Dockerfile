@@ -24,7 +24,7 @@ RUN set -xe \
 	&& mix local.rebar --force \
 	&& mix deps.get \
 	&& touch config/config.exs \
-	&& MIX_ENV=prod mix release --env=docker \
+	&& MIX_ENV=prod mix release --no-tar --env=docker \
 	&& cp -r _build/prod/rel/peerdns/* /opt/peerdns \
 	&& cd ui \
 	&& npm install \
@@ -33,10 +33,10 @@ RUN set -xe \
 	&& cp -r build /opt/peerdns/ui \
 	&& cd /opt/peerdns \
 	&& rm -r /opt/peerdns/PeerDNS-buildscripts \
-	&& rm -r /root/.mix \
+	&& rm -r /root/.mix /root/.npm /root/.hex \
 	&& apk del .build-deps
 
 EXPOSE 53/udp
 EXPOSE 14123
 WORKDIR /opt/peerdns
-CMD "./bin/peerdns" "foreground"
+CMD "/opt/peerdns/bin/peerdns" "foreground"
