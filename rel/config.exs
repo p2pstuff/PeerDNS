@@ -41,6 +41,20 @@ environment :prod do
   set vm_args: "rel/vm.args"
 end
 
+environment :docker do
+  set include_erts: false
+  set include_src: false
+  set cookie: :"oFmhAhqrOsUDo35HuakE5pQy0PhVCsC0fCcDnNzO5XsqC0UXG8smnIEDNi+/YWFD0+MozsYhITUSVRam/"
+  set vm_args: "rel/vm.args"
+
+  set config_providers: [
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/data/config.exs"]}
+  ]
+  set overlays: [
+    {:copy, "config/config.exs.sample", "data/config.exs"}
+  ]
+end
+
 # You may define one or more releases in this file.
 # If you have not set a default release, or selected one
 # when running `mix release`, the first release in the file
