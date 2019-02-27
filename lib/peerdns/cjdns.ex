@@ -18,7 +18,7 @@ defmodule PeerDNS.CJDNS do
   end
 
   def handle_info(:update, state) do
-    nlist = neighbors()
+    nlist = neighbors(state)
             |> Enum.map(fn {ip, name} ->
               {:ok, ip} = :inet.parse_address(String.to_charlist(ip))
               %{ip: ip, api_port: state.api_port, weight: state.weight, name: name}
@@ -31,8 +31,8 @@ defmodule PeerDNS.CJDNS do
   # ---------------
   # CJDNS API calls
 
-  def neighbors() do
-    nlist = neighbors(0, [])
+  def neighbors(params) do
+    nlist = neighbors(params, 0, [])
     for n <- nlist, n["state"] == "ESTABLISHED" do
       addr = n["addr"]
       [_, _, _, _, _, pk, _] = String.split(addr, ".")
@@ -48,22 +48,27 @@ defmodule PeerDNS.CJDNS do
     end
   end
 
-  defp neighbors(page, acc) do
-    ret = PeerDNS.CJDNS.query(%{q: "InterfaceController_peerStats", args: %{page: page}})
+  defp neighbors(params, page, acc) do
+    ret = PeerDNS.CJDNS.query(params, %{q: "InterfaceController_peerStats", args: %{page: page}})
     {:ok, %{"peers" => peerlist}} = ret
     if [] == peerlist  do
       acc
     else
-      neighbors(page + 1, peerlist ++ acc)
+      neighbors(params, page + 1, peerlist ++ acc)
     end
   end
 
 
-  def query(q) do
+  def query(params, q) do
     qenc = Bencode.encode!(q)
 
-    {:ok, sock} = :gen_udp.open(0, [:binary])
-    :ok = :gen_udp.send(sock, {127,0,0,1}, 11234, qenc)
+    sock = case params.cjdns_admin do
+      {:udp, addr, port} ->
+        {:ok, ip} = :inet.parse_address(String.to_charlist addr)
+        {:ok, sock} = :gen_udp.open(0, [:binary])
+        :ok = :gen_udp.send(sock, ip, port, qenc)
+        sock
+    end
     receive do
       {:udp, ^sock, _, _, resp} ->
         :gen_udp.close sock

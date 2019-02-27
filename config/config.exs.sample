@@ -111,7 +111,17 @@ config :peerdns, peer_lists: [
 # Look up our CJDNS neighbors by connecting to local cjdroute and try to
 # use them as neighbors
 config :peerdns, cjdns_neighbors: [
-  enable: true,
+  enable: false,
+  cjdns_admin: {:udp, "127.0.0.1", 11234},
+  update_interval: 3600,
+  api_port: 14123, weight: 0.5,
+]
+
+# Same for Yggdrasil
+config :peerdns, yggdrasil_neighbors: [
+  enable: false,
+  yggdrasil_admin: {:local, "/var/run/yggdrasil.sock"},
+  #yggdrasil_admin: {:tcp, "127.0.0.1", 9001},
   update_interval: 3600,
   api_port: 14123, weight: 0.5,
 ]

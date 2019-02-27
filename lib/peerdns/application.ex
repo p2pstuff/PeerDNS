@@ -27,9 +27,11 @@ defmodule PeerDNS.Application do
     children = api_processes ++ [
       PeerDNS.DB,
       PeerDNS.Sync,
-      PeerDNS.CJDNS,
       PeerDNS.DNSServer,
-    ] ++ peer_lists ++ sources
+    ] ++ peer_lists ++ sources ++ [
+      PeerDNS.CJDNS,
+      PeerDNS.Yggdrasil,
+    ]
 
     opts = [strategy: :rest_for_one, name: PeerDNS.Supervisor]
     Supervisor.start_link(children, opts)

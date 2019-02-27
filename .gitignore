@@ -22,7 +22,7 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 peerdns-*.tar
 
-/data/*.json
+/data/*
 
 # Configuration: provide a sample file only
 /config/config.exs
