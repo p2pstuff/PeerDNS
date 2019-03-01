@@ -3,7 +3,7 @@ FROM elixir:1.8-alpine
 RUN apk add libsodium bash
 
 RUN set -xe \
-	&& PEERDNS_DOWNLOAD_URL="https://github.com/p2pstuff/PeerDNS/archive/buildscripts.zip" \
+	&& PEERDNS_DOWNLOAD_URL="https://github.com/p2pstuff/PeerDNS/archive/master.zip" \
 	&& buildDeps=' \
 		ca-certificates \
 		curl \
@@ -19,7 +19,7 @@ RUN set -xe \
 	&& mkdir -p /opt/peerdns \
 	&& unzip -d /opt/peerdns peerdns.zip \
 	&& rm peerdns.zip \
-	&& cd /opt/peerdns/PeerDNS-buildscripts/ \
+	&& cd /opt/peerdns/PeerDNS-master/ \
 	&& mix local.hex --force \
 	&& mix local.rebar --force \
 	&& mix deps.get \
@@ -32,7 +32,7 @@ RUN set -xe \
 	&& mkdir /opt/peerdns/ui \
 	&& cp -r build /opt/peerdns/ui \
 	&& cd /opt/peerdns \
-	&& rm -r /opt/peerdns/PeerDNS-buildscripts \
+	&& rm -r /opt/peerdns/PeerDNS-master \
 	&& rm -r /root/.mix /root/.npm /root/.hex \
 	&& apk del .build-deps
 

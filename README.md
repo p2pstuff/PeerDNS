@@ -55,7 +55,7 @@ I haven't had time to test it yet but it works something like this:
 ```
 PEERDNS_DATA=/path/to/your/data/directory
 mkdir $PEERDNS_DATA
-curl https://github.com/p2pstuff/PeerDNS/raw/buildscripts/config/config.exs.sample > $PEERDNS_DATA/config.exs
+curl https://github.com/p2pstuff/PeerDNS/raw/master/config/config.exs.sample > $PEERDNS_DATA/config.exs
 vim $PEERDNS_DATA/config.exs
 docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
 ```
