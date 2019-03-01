@@ -47,6 +47,20 @@ answer, and for the other TLDs it will proxy the query to a regular DNS server
 of the user's choice.
 
 
+## Docker container
+
+A Docker image has been pushed to the Docker hub at `p2pstuff/peerdns`.
+I haven't had time to test it yet but it works something like this:
+
+```
+PEERDNS_DATA=/path/to/your/data/directory
+mkdir $PEERDNS_DATA
+curl https://github.com/p2pstuff/PeerDNS/raw/buildscripts/config/config.exs.sample > $PEERDNS_DATA/config.exs
+vim $PEERDNS_DATA/config.exs
+docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
+```
+
+
 ## Installation
 
 Tested on Linux, might work on other OSes as well (please tell me).
@@ -145,3 +159,12 @@ curl localhost:14123/api/privileged/peer_list/trust_list -d '{"action":"del","ip
 ```
 
 The API documentation is found in `doc/api.md`.
+
+
+## Docker notes (WIP)
+
+```
+docker build . -t p2pstuff/peerdns:0.1.0 --no-cache
+docker run -v $(pwd)/data:/opt/peerdns/data --network host -it p2pstuff/peerdns:0.1.0 /bin/bash
+docker run -v $(pwd)/data:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
+```

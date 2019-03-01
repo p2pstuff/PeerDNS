@@ -6,11 +6,13 @@ defmodule PeerDNS.API.Router do
   plug :match
   plug :dispatch
 
+  @version Mix.Project.config[:version]
+
   get "/" do
     about = %{
       "api" => "PeerDNS",
       "server" => "PeerDNS",
-      "version" => PeerDNS.MixProject.project[:version],
+      "version" => @version,
       "tld" => Application.fetch_env!(:peerdns, :tld),
       "operator" => Application.fetch_env!(:peerdns, :operator),
       "privileged" => PeerDNS.is_privileged_api_ip?(conn.remote_ip)
