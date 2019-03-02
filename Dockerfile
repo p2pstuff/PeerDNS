@@ -2,8 +2,18 @@ FROM elixir:1.8-alpine
 
 RUN apk add libsodium bash
 
+RUN mkdir -p /opt/peerdns/data /opt/peerdns/ui
+COPY mix.exs mix.lock /opt/peerdns/
+COPY config /opt/peerdns/config
+COPY lib /opt/peerdns/lib
+COPY ui/package.json ui/package-lock.json /opt/peerdns/ui/
+COPY ui/src /opt/peerdns/ui/src
+COPY ui/public /opt/peerdns/ui/public
+
+WORKDIR /opt/peerdns
+ENV MIX_ENV prod
+
 RUN set -xe \
-	&& PEERDNS_DOWNLOAD_URL="https://github.com/p2pstuff/PeerDNS/archive/master.zip" \
 	&& buildDeps=' \
 		ca-certificates \
 		curl \
@@ -15,28 +25,19 @@ RUN set -xe \
 		npm \
 	' \
 	&& apk add --no-cache --virtual .build-deps $buildDeps \
-	&& curl -fSL -o peerdns.zip $PEERDNS_DOWNLOAD_URL \
-	&& mkdir -p /opt/peerdns \
-	&& unzip -d /opt/peerdns peerdns.zip \
-	&& rm peerdns.zip \
-	&& cd /opt/peerdns/PeerDNS-master/ \
 	&& mix local.hex --force \
 	&& mix local.rebar --force \
 	&& mix deps.get \
-	&& touch config/config.exs \
-	&& MIX_ENV=prod mix release --no-tar --env=docker \
-	&& cp -r _build/prod/rel/peerdns/* /opt/peerdns \
+	&& mix compile \
 	&& cd ui \
 	&& npm install \
 	&& npm run build \
-	&& mkdir /opt/peerdns/ui \
-	&& cp -r build /opt/peerdns/ui \
-	&& cd /opt/peerdns \
-	&& rm -r /opt/peerdns/PeerDNS-master \
-	&& rm -r /root/.mix /root/.npm /root/.hex \
+	&& mv build .build && rm -r * && mv .build build \
+	&& rm -r /root/.npm /root/.hex \
 	&& apk del .build-deps
 
 EXPOSE 53/udp
 EXPOSE 14123
-WORKDIR /opt/peerdns
-CMD "/opt/peerdns/bin/peerdns" "foreground"
+
+CMD "mix" "run" "--no-halt" "--no-deps-check"
+

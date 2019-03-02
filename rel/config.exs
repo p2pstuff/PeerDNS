@@ -50,9 +50,6 @@ environment :docker do
   set config_providers: [
     {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/data/config.exs"]}
   ]
-  set overlays: [
-    {:copy, "config/config.exs.sample", "data/config.exs"}
-  ]
 end
 
 # You may define one or more releases in this file.

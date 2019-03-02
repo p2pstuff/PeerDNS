@@ -4,7 +4,7 @@ defmodule PeerDNS.MixProject do
   def project do
     [
       app: :peerdns,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -32,8 +32,6 @@ defmodule PeerDNS.MixProject do
       {:poison, "~> 3.1"},
       {:enacl, git: "https://github.com/jlouis/enacl.git", tag: "0.16.0"},
       {:dns, "~> 2.1.2"},
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
 end

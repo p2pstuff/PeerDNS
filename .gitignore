@@ -22,7 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 peerdns-*.tar
 
+# Data files, includes local configuration
 /data/*
-
-# Configuration: provide a sample file only
-/config/config.exs

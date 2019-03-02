@@ -28,8 +28,9 @@ defmodule PeerDNS.API.Privileged do
   plug :dispatch
 
   get "/" do
-    sources = for src <- Application.fetch_env!(:peerdns, :sources), into: %{} do
-      {Atom.to_string(src[:id]),
+    source_desc = Application.fetch_env!(:peerdns, :sources)
+    sources = for {src_id, src} <- source_desc, into: %{} do
+      {Atom.to_string(src_id),
         %{
           "name" => src[:name],
           "description" => src[:description],
@@ -38,8 +39,9 @@ defmodule PeerDNS.API.Privileged do
         }
       }
     end
-    peer_lists = for pl <- Application.fetch_env!(:peerdns, :peer_lists), into: %{} do
-      {Atom.to_string(pl[:id]),
+    pl_desc = Application.fetch_env!(:peerdns, :peer_lists)
+    peer_lists = for {pl_id, pl} <- pl_desc, into: %{} do
+      {Atom.to_string(pl_id),
         %{
           "name" => pl[:name],
           "description" => pl[:description],
@@ -207,15 +209,15 @@ defmodule PeerDNS.API.Privileged do
   end
 
   defp check_source(id) do
-    [s1] = Application.fetch_env!(:peerdns, :sources)
-           |> Enum.filter(&(Atom.to_string(&1[:id]) == id))
-    s1
+    s1 = Application.fetch_env!(:peerdns, :sources)[String.to_existing_atom id]
+    true = (s1 != nil)
+    Keyword.put(s1, :id, String.to_existing_atom id)
   end
 
   defp check_peer_list(id) do
-    [s1] = Application.fetch_env!(:peerdns, :peer_lists)
-           |> Enum.filter(&(Atom.to_string(&1[:id]) == id))
-    s1
+    s1 = Application.fetch_env!(:peerdns, :peer_lists)[String.to_existing_atom id]
+    true = (s1 != nil)
+    Keyword.put(s1, :id, String.to_existing_atom id)
   end
 
   defp api_action_result(conn, result) do

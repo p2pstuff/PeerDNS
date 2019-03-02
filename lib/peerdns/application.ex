@@ -5,13 +5,15 @@ defmodule PeerDNS.Application do
 
   def start(_type, _args) do
     source_desc = Application.fetch_env!(:peerdns, :sources)
-    sources = for src_args <- source_desc do
-      Supervisor.child_spec({PeerDNS.Source, src_args}, id: src_args[:id])
+    sources = for {src_id, src_args} <- source_desc do
+      src_args = Keyword.put(src_args, :id, src_id)
+      Supervisor.child_spec({PeerDNS.Source, src_args}, id: src_id)
     end
 
     peer_list_desc = Application.fetch_env!(:peerdns, :peer_lists)
-    peer_lists = for pl_args <- peer_list_desc do
-      Supervisor.child_spec({PeerDNS.PeerList, pl_args}, id: pl_args[:id])
+    peer_lists = for {pl_id, pl_args} <- peer_list_desc do
+      pl_args = Keyword.put(pl_args, :id, pl_id)
+      Supervisor.child_spec({PeerDNS.PeerList, pl_args}, id: pl_id)
     end
 
     api_listen = Application.fetch_env!(:peerdns, :listen_api)

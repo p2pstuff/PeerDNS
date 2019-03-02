@@ -14,14 +14,15 @@ Talk: join the `#peerdns` channel through one of the following means:
 Contents of this file:
 
 - [How it works](#how-it-works)
-- [Installation with Docker](#installation-with-docker)
-- [Installation without Docker](#installation-without-docker)
+- [Configuration files](#configuration-files)
+- [Running with Docker](#running-with-docker)
+- [Running without Docker](#running-without-docker)
 - [API examples](#peerdns-api-examples)
 
 Other documentation topics:
 
-- [API Call documentation](doc/api.md)
-- [Protocol refernce](doc/protocol.md)
+- [API calls reference](doc/api.md)
+- [Protocol reference](doc/protocol.md)
 
 ## How it works
 
@@ -62,35 +63,66 @@ answer, and for the other TLDs it will proxy the query to a regular DNS server
 of the user's choice.
 
 
-## Installation with Docker
+## Configuration files
+
+PeerDNS can be configured by creating `.exs` scripts in the data directory.
+The location of the data directory depends on your installation method (see
+below).
+
+You will typically want to create at least one configuration file called
+`local.exs` in your data directory. The values defined in this config file will
+overwrite the defaults that are provided in the `config/config.exs` file, which
+you can read as a reference. DO NOT edit `config/config.exs` directly.
+
+Typically, you will want to add a few trusted peers to exchange data with.
+Here is a template `local.exs` file:
+
+```elixir
+use Mix.Config
+
+config :peerdns, operator: %{
+  "Name" => "your name",
+  "IRC" => "your IRC handle",
+}
+
+# Automatically add our CJDNS neighbors as peers
+config :peerdns, :cjdns_neighbors, enable: true
+
+# Change the default peer list
+config :peerdns, :peer_lists, trust_list: [
+  default: [
+	[name: "<peer name>", ip: "<peer IP>", api_port: 14123, weight: 0.8]
+  ]
+]
+```
+
+You may use several `.exs` files in the data directory as config files, they
+will all be loaded when PeerDNS starts.
+
+
+## Running with Docker
 
 A Docker image has been pushed to the Docker hub at `p2pstuff/peerdns`.
 
 To use it, first create a directory for your persistent PeerDNS configuration
 and data files:
 
-```
+```sh
 PEERDNS_DATA=/path/to/your/data/directory
 mkdir -p $PEERDNS_DATA
 ```
 
-Download the sample configuration file and edit it to fit your needs.
-Typically, you will want to add a few trusted peers to exchange data with. A
-few are provided in the sample but you might want to use other ones.
-
-```
-curl https://raw.githubusercontent.com/p2pstuff/PeerDNS/master/config/config.exs.sample > $PEERDNS_DATA/config.exs
-vim $PEERDNS_DATA/config.exs
-```
+Create configuration files in the data directory `$PEERDNS_DATA` as explained
+[above](#configuration-files).
 
 Run the Docker container with the following command:
 
-```
+```sh
 docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
 ```
 
 
-## Installation without Docker
+## Running without Docker
 
 I'm developping PeerDNS on Linux so that's where it will work the best. It has
 also been sucessfully installed on macOS.
@@ -108,15 +140,14 @@ well.
 
 Install the [Elixir](https://elixir-lang.org/) programming language.  If your
 distribution does not have a recent enough version of Elixir (required: `1.8`
-or later), you can install it through
-[asdf](https://github.com/asdf-vm/asdf).
+or later), you can install it through [asdf](https://github.com/asdf-vm/asdf).
 
 [Here](https://stackoverflow.com/questions/413807/is-there-a-way-for-non-root-processes-to-bind-to-privileged-ports-on-linux)
 is a list of ways to bind privileged ports as an unprivilege users.
 
 This is an easy method but a quite bad one:
 
-```
+```sh
 sudo sysctl net.ipv4.ip_unprivileged_port_start=53
 ```
 
@@ -137,20 +168,19 @@ package manager does not have a recent enough version of Elixir (required:
 
 Clone this repo and download Elixir dependencies:
 
-```
+```sh
 git clone https://github.com/p2pstuff/PeerDNS
 cd PeerDNS
 mix deps.get
 ```
 
-Copy `config/config.exs.sample` to `config/config.exs` and edit to your needs.
-Typically, you will want to add a few trusted peers to exchange data with. A
-few are provided in the sample but you might want to use other ones.
+Create configuration files in the `data/` directory as explained
+[above](#configuration-files).
 
 **OPTIONAL** To serve the web UI locally instead of using a hosted version,
 you can download precompiled files to the `ui` directory:
 
-```
+```sh
 cd ui
 wget http://peerdns.p2pstuff.xyz/peerdns-ui-build.tgz
 tar xzvf peerdns-ui-build.tgz
