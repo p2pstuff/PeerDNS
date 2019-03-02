@@ -2,11 +2,26 @@
 
 A peer-to-peer DNS system based on a Web of Trust.
 
-Designed to work with CJDNS, strongly inspired by
+Designed to work with CJDNS and Yggdrasil, strongly inspired by
 <https://docs.meshwith.me/notes/dns.html>.
 
-Talk: join the `#peerdns` channel on `irc.fc00.io`.
+Talk: join the `#peerdns` channel through one of the following means:
 
+- CJDNS IRC: `#peerdns` on server `h.irc.cjdns.fr`
+- Yggdrasil IRC: `#peerdns` on server `y.irc.cjdns.fr`
+- Clearnet Matrix: `#peerdns:matrix.org`
+
+Contents of this file:
+
+- [How it works](#how-it-works)
+- [Installation with Docker](#installation-with-docker)
+- [Installation without Docker](#installation-without-docker)
+- [API examples](#peerdns-api-examples)
+
+Other documentation topics:
+
+- [API Call documentation](doc/api.md)
+- [Protocol refernce](doc/protocol.md)
 
 ## How it works
 
@@ -47,23 +62,38 @@ answer, and for the other TLDs it will proxy the query to a regular DNS server
 of the user's choice.
 
 
-## Docker container
+## Installation with Docker
 
 A Docker image has been pushed to the Docker hub at `p2pstuff/peerdns`.
-I haven't had time to test it yet but it works something like this:
+
+To use it, first create a directory for your persistent PeerDNS configuration
+and data files:
 
 ```
 PEERDNS_DATA=/path/to/your/data/directory
-mkdir $PEERDNS_DATA
+mkdir -p $PEERDNS_DATA
+```
+
+Download the sample configuration file and edit it to fit your needs.
+Typically, you will want to add a few trusted peers to exchange data with. A
+few are provided in the sample but you might want to use other ones.
+
+```
 curl https://raw.githubusercontent.com/p2pstuff/PeerDNS/master/config/config.exs.sample > $PEERDNS_DATA/config.exs
 vim $PEERDNS_DATA/config.exs
+```
+
+Run the Docker container with the following command:
+
+```
 docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
 ```
 
 
-## Installation
+## Installation without Docker
 
-Tested on Linux, might work on other OSes as well (please tell me).
+I'm developping PeerDNS on Linux so that's where it will work the best. It has
+also been sucessfully installed on macOS.
 
 PeerDNS runs a DNS server, meaning it needs to bind port 53.  You can run it as
 root but it is highly discouraged!  A better solution is to allow non-root user
@@ -72,9 +102,14 @@ in some way or another.
 
 ### Linux steps
 
-Install [Elixir](https://elixir-lang.org/) and `libsodium`. If your
-distribution has separate packages for development headers, you might need to
-install `libsodium-dev` as well.
+Install the `libsodium` crypto library. If your distribution has separate
+packages for development headers, you might need to install `libsodium-dev` as
+well.
+
+Install the [Elixir](https://elixir-lang.org/) programming language.  If your
+distribution does not have a recent enough version of Elixir (required: `1.8`
+or later), you can install it through
+[asdf](https://github.com/asdf-vm/asdf).
 
 [Here](https://stackoverflow.com/questions/413807/is-there-a-way-for-non-root-processes-to-bind-to-privileged-ports-on-linux)
 is a list of ways to bind privileged ports as an unprivilege users.
@@ -87,9 +122,14 @@ sudo sysctl net.ipv4.ip_unprivileged_port_start=53
 
 ### macOS steps
 
-Install [Elixir](https://elixir-lang.org/) and `libsodium`. If your package
-manager has separate packages for development headers, you might need to
-install `libsodium-dev` as well.
+Install the `libsodium` crypto library. If your package manager has separate
+packages for development headers, you might need to install `libsodium-dev` as
+well.
+
+Install the [Elixir](https://elixir-lang.org/) programming language.  If your
+package manager does not have a recent enough version of Elixir (required:
+`1.8` or later), you can install it through
+[asdf](https://github.com/asdf-vm/asdf).
 
 (insert here solution for binding port 53 as non-root user)
 
@@ -143,7 +183,7 @@ PeerDNS also starts an API server at `http://localhost:14123`, which provides a
 user interface to create domains and edit your trust list.
 
 
-## PeerDNS API
+## PeerDNS API examples
 
 There is no CLI utility yet to administrate your PeerDNS instance, however the
 JSON API can be easily called from the command line using `curl`. Here are a
