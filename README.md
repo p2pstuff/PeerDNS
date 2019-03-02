@@ -118,7 +118,7 @@ Create configuration files in the data directory `$PEERDNS_DATA` as explained
 Run the Docker container with the following command:
 
 ```sh
-docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
+docker run -v $PEERDNS_DATA:/opt/peerdns/data --network host p2pstuff/peerdns:latest
 ```
 
 
@@ -190,7 +190,7 @@ cd ..
 If you prefer to compile the UI yourself, install `npm` and run the following
 commands:
 
-```
+```sh
 cd ui
 npm install
 npm run build
@@ -201,7 +201,7 @@ cd ..
 
 Run PeerDNS:
 
-```
+```sh
 mix run --no-halt
 ```
 
@@ -219,7 +219,7 @@ There is no CLI utility yet to administrate your PeerDNS instance, however the
 JSON API can be easily called from the command line using `curl`. Here are a
 few examples:
 
-```
+```sh
 # Get the trust list
 curl localhost:14123/api/privileged/peer_list/trust_list
 # Add a peer
@@ -233,7 +233,7 @@ The API documentation is found in `doc/api.md`.
 
 ## Docker notes (WIP)
 
-```
+```sh
 docker build . -t p2pstuff/peerdns:0.1.0 --no-cache
 docker run -v $(pwd)/data:/opt/peerdns/data --network host -it p2pstuff/peerdns:0.1.0 /bin/bash
 docker run -v $(pwd)/data:/opt/peerdns/data --network host p2pstuff/peerdns:0.1.0
