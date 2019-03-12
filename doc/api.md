@@ -383,7 +383,7 @@ $ curl localhost:14123/api/privileged/source/my_domains
 | `name` | string | mandatory | DNS name we want to change |
 | `pk` | string | `add_name` | The public key we want to associate with that name |
 | `weight` | string | `add_name`, `add_zone` | The weight we want to associate with that name |
-| `entries` | list of DNS entries | `add_zone` | The new set of DNS entries for that zone (optionnal, if absent no change is made) |
+| `entries` | list of DNS entries | `add_zone` | The new set of DNS entries for that zone. If present, all entries are replaced by the ones specified here. If absent, no change is made. |
 
 The `add_name` and `add_zone` operations are also used to edit name and
 zone data: if a previous name or zone exists with the name given as an
@@ -395,7 +395,7 @@ argument, then the previous data is replaced to the data given in the call.
 
 ```
 $ curl localhost:14123/api/privileged/source/my_domains -X POST \
-	-H "Content-Typ: application/json" \
+	-H "Content-Type: application/json" \
 	-d '{"action": "add_name", "name": "peerdns.hype", "pk": "nx_WH3M0Bxp-7v2-neF95Q2dtdvlIa4w3FEWxOiZSM0", "weight": 1.0}'
 {
   "result": "success"
