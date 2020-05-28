@@ -24,6 +24,8 @@ Other documentation topics:
 - [API calls reference](doc/api.md)
 - [Protocol reference](doc/protocol.md)
 
+PeerDNS is released under the GPLv3 license.
+
 ## How it works
 
 Each peer has a list of domains it knows about and their "weight", i.e. their
